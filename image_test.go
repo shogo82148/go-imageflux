@@ -24,10 +24,31 @@ func TestImage(t *testing.T) {
 			},
 			"https://p1-47e91401.imageflux.jp/c/w=200/images/1.jpg",
 		},
+		{
+			&Image{
+				Host: "p1-47e91401.imageflux.jp",
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Secret: "testsigningsecret",
+				},
+			},
+			"https://p1-47e91401.imageflux.jp/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
+		},
+		{
+			&Image{
+				Host: "p1-47e91401.imageflux.jp",
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width:  200,
+					Secret: "testsigningsecret",
+				},
+			},
+			"https://p1-47e91401.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
+		},
 	}
 
 	for _, c := range cases {
-		got := c.image.String()
+		got := c.image.SignedURL().String()
 		if got != c.output {
 			t.Errorf("want %s, got %s", c.output, got)
 		}

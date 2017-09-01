@@ -1,9 +1,14 @@
 package imageflux
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"io"
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 )
 
 // Image is an image hosted on ImageFlux.
@@ -80,6 +85,7 @@ func (a AspectMode) String() string {
 	return ""
 }
 
+// URL returns the URL of the image.
 func (img *Image) URL() *url.URL {
 	p := img.Path
 	if c := img.Config.String(); c != "" {
@@ -93,12 +99,48 @@ func (img *Image) URL() *url.URL {
 	}
 }
 
+// SignedURL returns the URL of the image with the signature.
 func (img *Image) SignedURL() *url.URL {
-	return nil
+	u, s := img.urlAndSign()
+	if s == "" {
+		return u
+	}
+
+	if strings.HasPrefix(u.Path, "/c/") {
+		u.Path = "/c/sig=" + s + "," + u.Path[len("/c/"):]
+		return u
+	}
+
+	if strings.HasPrefix(u.Path, "/c!/") {
+		u.Path = "/c!/sig=" + s + "," + u.Path[len("/c!/"):]
+		return u
+	}
+
+	u.Path = "/c/sig=" + s + u.Path
+	return u
 }
 
+// Sign returns the signature.
 func (img *Image) Sign() string {
-	return ""
+	_, s := img.urlAndSign()
+	return s
+}
+
+func (img *Image) urlAndSign() (*url.URL, string) {
+	u := img.URL()
+	if img.Config == nil || img.Config.Secret == "" {
+		return u, ""
+	}
+
+	p := u.Path
+	if len(p) < 1 || p[0] != '/' {
+		p = "/" + p
+		u.Path = p
+	}
+	mac := hmac.New(sha256.New, []byte(img.Config.Secret))
+	io.WriteString(mac, p)
+
+	return u, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func (img *Image) String() string {
