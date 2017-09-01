@@ -66,6 +66,18 @@ func TestConfig(t *testing.T) {
 			},
 			output: "w=200,h=200",
 		},
+		{
+			config: &Config{
+				DisableEnlarge: true,
+			},
+			output: "u=0",
+		},
+		{
+			config: &Config{
+				AspectMode: AspectModeScale,
+			},
+			output: "a=0",
+		},
 	}
 
 	for _, c := range cases {

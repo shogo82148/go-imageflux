@@ -51,11 +51,33 @@ func (c *Config) String() string {
 		buf = strconv.AppendInt(buf, int64(c.Height), 10)
 		buf = append(buf, ',')
 	}
+	if c.DisableEnlarge {
+		buf = append(buf, 'u', '=', '0', ',')
+	}
+	if c.AspectMode != AspectModeDefault {
+		buf = append(buf, 'a', '=')
+		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
 
 	if len(buf) == 0 {
 		return ""
 	}
 	return string(buf[:len(buf)-1])
+}
+
+func (a AspectMode) String() string {
+	switch a {
+	case AspectModeDefault:
+		return "default"
+	case AspectModeScale:
+		return "scale"
+	case AspectModeForceScale:
+		return "force-scale"
+	case AspectModePad:
+		return "pad"
+	}
+	return ""
 }
 
 func (img *Image) URL() *url.URL {
