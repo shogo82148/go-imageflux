@@ -33,3 +33,45 @@ func TestImage(t *testing.T) {
 		}
 	}
 }
+
+func TestConfig(t *testing.T) {
+	cases := []struct {
+		config *Config
+		output string
+	}{
+		{
+			config: nil,
+			output: "",
+		},
+		{
+			config: &Config{},
+			output: "",
+		},
+		{
+			config: &Config{
+				Width: 200,
+			},
+			output: "w=200",
+		},
+		{
+			config: &Config{
+				Height: 200,
+			},
+			output: "h=200",
+		},
+		{
+			config: &Config{
+				Width:  200,
+				Height: 200,
+			},
+			output: "w=200,h=200",
+		},
+	}
+
+	for _, c := range cases {
+		got := c.config.String()
+		if got != c.output {
+			t.Errorf("want %s, got %s", c.output, got)
+		}
+	}
+}

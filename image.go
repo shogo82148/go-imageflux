@@ -46,6 +46,11 @@ func (c *Config) String() string {
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
 		buf = append(buf, ',')
 	}
+	if c.Height != 0 {
+		buf = append(buf, 'h', '=')
+		buf = strconv.AppendInt(buf, int64(c.Height), 10)
+		buf = append(buf, ',')
+	}
 
 	if len(buf) == 0 {
 		return ""
