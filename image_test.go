@@ -9,14 +9,18 @@ func TestImage(t *testing.T) {
 	}{
 		{
 			&Image{
-				Host: "p1-47e91401.imageflux.jp",
+				Proxy: &Proxy{
+					Host: "p1-47e91401.imageflux.jp",
+				},
 				Path: "/images/1.jpg",
 			},
 			"https://p1-47e91401.imageflux.jp/images/1.jpg",
 		},
 		{
 			&Image{
-				Host: "p1-47e91401.imageflux.jp",
+				Proxy: &Proxy{
+					Host: "p1-47e91401.imageflux.jp",
+				},
 				Path: "/images/1.jpg",
 				Config: &Config{
 					Width: 200,
@@ -26,21 +30,23 @@ func TestImage(t *testing.T) {
 		},
 		{
 			&Image{
-				Host: "p1-47e91401.imageflux.jp",
-				Path: "/images/1.jpg",
-				Config: &Config{
+				Proxy: &Proxy{
+					Host:   "p1-47e91401.imageflux.jp",
 					Secret: "testsigningsecret",
 				},
+				Path: "/images/1.jpg",
 			},
 			"https://p1-47e91401.imageflux.jp/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
 		},
 		{
 			&Image{
-				Host: "p1-47e91401.imageflux.jp",
+				Proxy: &Proxy{
+					Host:   "p1-47e91401.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
 				Path: "/images/1.jpg",
 				Config: &Config{
-					Width:  200,
-					Secret: "testsigningsecret",
+					Width: 200,
 				},
 			},
 			"https://p1-47e91401.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",

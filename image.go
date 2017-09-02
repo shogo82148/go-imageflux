@@ -27,13 +27,26 @@ type Config struct {
 	AspectMode     AspectMode
 }
 
+// AspectMode is aspect mode.
 type AspectMode int
 
 const (
+	// AspectModeDefault is the default value of aspect mode.
 	AspectModeDefault AspectMode = iota
+
+	// AspectModeScale holds the the aspect ratio of the input image,
+	// and scales to fit in the specified size.
 	AspectModeScale
+
+	// AspectModeForceScale ignores the aspect ratio of the input image.
 	AspectModeForceScale
+
+	// AspectModeCrop holds the the aspect ratio of the input image,
+	// and crops the image.
 	AspectModeCrop
+
+	// AspectModePad holds the the aspect ratio of the input image,
+	// and fills the unfilled portion with the specified background color.
 	AspectModePad
 )
 
