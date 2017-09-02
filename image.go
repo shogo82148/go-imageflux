@@ -24,7 +24,12 @@ type Config struct {
 	Width          int
 	Height         int
 	DisableEnlarge bool
-	AspectMode     AspectMode
+	AspectMode
+
+	// TODO: Overlay Parameters.
+
+	// Output Parameters.
+	Format Format
 }
 
 // AspectMode is aspect mode.
@@ -50,6 +55,31 @@ const (
 	AspectModePad
 )
 
+// Format is the format of the output image.
+type Format string
+
+const (
+	// FormatAuto encodes the image by the same format with the input image.
+	FormatAuto Format = "auto"
+
+	// FormatJPEG encodes the image as a JPEG.
+	FormatJPEG Format = "jpg"
+
+	// FormatPNG encodes the image as a PNG.
+	FormatPNG Format = "png"
+
+	// FormatGIF encodes the image as a GIF.
+	FormatGIF Format = "gif"
+
+	// FormatWebPFromJPEG encodes the image as a WebP.
+	// The input image should be a JPEG.
+	FormatWebPFromJPEG Format = "webp:jpeg"
+
+	// FormatWebPFromPNG encodes the image as a WebP.
+	// The input image should be a PNG.
+	FormatWebPFromPNG Format = "webp:png"
+)
+
 func (c *Config) String() string {
 	if c == nil {
 		return ""
@@ -72,6 +102,12 @@ func (c *Config) String() string {
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, 'a', '=')
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
+
+	if c.Format != "" {
+		buf = append(buf, 'f', '=')
+		buf = append(buf, c.Format...)
 		buf = append(buf, ',')
 	}
 

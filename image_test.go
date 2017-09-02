@@ -105,6 +105,12 @@ func TestConfig(t *testing.T) {
 			},
 			output: "a=0",
 		},
+		{
+			config: &Config{
+				Format: FormatWebPFromPNG,
+			},
+			output: "f=webp:png",
+		},
 	}
 
 	for _, c := range cases {
