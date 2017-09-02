@@ -111,6 +111,18 @@ func TestConfig(t *testing.T) {
 			},
 			output: "f=webp:png",
 		},
+		{
+			config: &Config{
+				Quality: 75,
+			},
+			output: "q=75",
+		},
+		{
+			config: &Config{
+				DisableOptimization: true,
+			},
+			output: "o=0",
+		},
 	}
 
 	for _, c := range cases {

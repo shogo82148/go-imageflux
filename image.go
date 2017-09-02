@@ -29,7 +29,9 @@ type Config struct {
 	// TODO: Overlay Parameters.
 
 	// Output Parameters.
-	Format Format
+	Format              Format
+	Quality             int
+	DisableOptimization bool
 }
 
 // AspectMode is aspect mode.
@@ -109,6 +111,14 @@ func (c *Config) String() string {
 		buf = append(buf, 'f', '=')
 		buf = append(buf, c.Format...)
 		buf = append(buf, ',')
+	}
+	if c.Quality != 0 {
+		buf = append(buf, 'q', '=')
+		buf = strconv.AppendInt(buf, int64(c.Quality), 10)
+		buf = append(buf, ',')
+	}
+	if c.DisableOptimization {
+		buf = append(buf, 'o', '=', '0', ',')
 	}
 
 	if len(buf) == 0 {
