@@ -13,8 +13,8 @@ import (
 
 // Image is an image hosted on ImageFlux.
 type Image struct {
-	Host   string
 	Path   string
+	Proxy  *Proxy
 	Config *Config
 }
 
@@ -25,9 +25,6 @@ type Config struct {
 	Height         int
 	DisableEnlarge bool
 	AspectMode     AspectMode
-
-	// Signed URL Parameters.
-	Secret string
 }
 
 type AspectMode int
@@ -94,7 +91,7 @@ func (img *Image) URL() *url.URL {
 
 	return &url.URL{
 		Scheme: "https",
-		Host:   img.Host,
+		Host:   img.Proxy.Host,
 		Path:   p,
 	}
 }
@@ -128,7 +125,7 @@ func (img *Image) Sign() string {
 
 func (img *Image) urlAndSign() (*url.URL, string) {
 	u := img.URL()
-	if img.Config == nil || img.Config.Secret == "" {
+	if img.Proxy == nil || img.Proxy.Secret == "" {
 		return u, ""
 	}
 
@@ -137,7 +134,7 @@ func (img *Image) urlAndSign() (*url.URL, string) {
 		p = "/" + p
 		u.Path = p
 	}
-	mac := hmac.New(sha256.New, []byte(img.Config.Secret))
+	mac := hmac.New(sha256.New, []byte(img.Proxy.Secret))
 	io.WriteString(mac, p)
 
 	return u, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
