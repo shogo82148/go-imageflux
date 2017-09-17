@@ -107,6 +107,12 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				Origin: OriginTopLeft,
+			},
+			output: "g=1",
+		},
+		{
+			config: &Config{
 				Format: FormatWebPFromPNG,
 			},
 			output: "f=webp:png",

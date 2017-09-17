@@ -25,6 +25,7 @@ type Config struct {
 	Height         int
 	DisableEnlarge bool
 	AspectMode     AspectMode
+	Origin         Origin
 
 	// TODO: Overlay Parameters.
 
@@ -55,6 +56,22 @@ const (
 	// AspectModePad holds the the aspect ratio of the input image,
 	// and fills the unfilled portion with the specified background color.
 	AspectModePad
+)
+
+// Origin is the origin.
+type Origin int
+
+const (
+	OriginDefault Origin = iota
+	OriginTopLeft
+	OriginTopCenter
+	OriginTopRight
+	OriginMiddleLeft
+	OriginMiddleCenter
+	OriginMiddleRight
+	OriginBottomLeft
+	OriginBottomCenter
+	OriginBottomRight
 )
 
 // Format is the format of the output image.
@@ -104,6 +121,11 @@ func (c *Config) String() string {
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, 'a', '=')
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
+	if c.Origin != OriginDefault {
+		buf = append(buf, 'g', '=')
+		buf = strconv.AppendInt(buf, int64(c.Origin), 10)
 		buf = append(buf, ',')
 	}
 
