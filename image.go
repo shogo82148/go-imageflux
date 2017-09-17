@@ -116,6 +116,10 @@ const (
 	FormatWebPFromPNG Format = "webp:png"
 )
 
+func (f Format) String() string {
+	return string(f)
+}
+
 func (c *Config) String() string {
 	if c == nil {
 		return ""
