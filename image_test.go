@@ -1,6 +1,7 @@
 package imageflux
 
 import (
+	"image"
 	"image/color"
 	"testing"
 )
@@ -107,6 +108,19 @@ func TestConfig(t *testing.T) {
 				AspectMode: AspectModeScale,
 			},
 			output: "a=0",
+		},
+		{
+			config: &Config{
+				Clip: image.Rect(100, 150, 200, 250),
+			},
+			output: "c=100:150:200:250",
+		},
+		{
+			config: &Config{
+				ClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:   image.Pt(100, 100),
+			},
+			output: "cr=0.25:0.25:0.75:0.75",
 		},
 		{
 			config: &Config{

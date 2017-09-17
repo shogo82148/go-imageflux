@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"image"
 	"image/color"
 	"io"
 	"net/url"
@@ -27,6 +28,9 @@ type Config struct {
 	Height         int
 	DisableEnlarge bool
 	AspectMode     AspectMode
+	Clip           image.Rectangle
+	ClipRatio      image.Rectangle
+	ClipMax        image.Point
 	Origin         Origin
 	Background     color.Color
 
@@ -124,6 +128,32 @@ func (c *Config) String() string {
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, 'a', '=')
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
+	if c.Clip != image.ZR {
+		buf = append(buf, 'c', '=')
+		buf = strconv.AppendInt(buf, int64(c.Clip.Min.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(c.Clip.Min.Y), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(c.Clip.Max.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(c.Clip.Max.Y), 10)
+		buf = append(buf, ',')
+	}
+	if c.ClipRatio != image.ZR && c.ClipMax != image.ZP {
+		x1 := float64(c.ClipRatio.Min.X) / float64(c.ClipMax.X)
+		y1 := float64(c.ClipRatio.Min.Y) / float64(c.ClipMax.Y)
+		x2 := float64(c.ClipRatio.Max.X) / float64(c.ClipMax.X)
+		y2 := float64(c.ClipRatio.Max.Y) / float64(c.ClipMax.Y)
+		buf = append(buf, 'c', 'r', '=')
+		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
 	if c.Origin != OriginDefault {
