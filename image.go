@@ -4,6 +4,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
+	"image/color"
 	"io"
 	"net/url"
 	"path"
@@ -26,6 +28,7 @@ type Config struct {
 	DisableEnlarge bool
 	AspectMode     AspectMode
 	Origin         Origin
+	Background     color.Color
 
 	// TODO: Overlay Parameters.
 
@@ -127,6 +130,21 @@ func (c *Config) String() string {
 		buf = append(buf, 'g', '=')
 		buf = strconv.AppendInt(buf, int64(c.Origin), 10)
 		buf = append(buf, ',')
+	}
+	if c.Background != nil {
+		r, g, b, a := c.Background.RGBA()
+		if a == 0xffff {
+			c := fmt.Sprintf("b=%02x%02x%02x,", r>>8, g>>8, b>>8)
+			buf = append(buf, c...)
+		} else if a == 0 {
+			buf = append(buf, "b=000000"...)
+		} else {
+			r = (r * 0xffff) / a
+			g = (g * 0xffff) / a
+			b = (b * 0xffff) / a
+			c := fmt.Sprintf("b=%02x%02x%02x,", r>>8, g>>8, b>>8)
+			buf = append(buf, c...)
+		}
 	}
 
 	if c.Format != "" {

@@ -1,6 +1,9 @@
 package imageflux
 
-import "testing"
+import (
+	"image/color"
+	"testing"
+)
 
 func TestImage(t *testing.T) {
 	cases := []struct {
@@ -110,6 +113,36 @@ func TestConfig(t *testing.T) {
 				Origin: OriginTopLeft,
 			},
 			output: "g=1",
+		},
+		{
+			config: &Config{
+				Background: color.Black,
+			},
+			output: "b=000000",
+		},
+		{
+			config: &Config{
+				Background: color.White,
+			},
+			output: "b=ffffff",
+		},
+		{
+			config: &Config{
+				Background: color.NRGBA{R: 255, G: 0, B: 0, A: 255},
+			},
+			output: "b=ff0000",
+		},
+		{
+			config: &Config{
+				Background: color.NRGBA{R: 0, G: 255, B: 0, A: 255},
+			},
+			output: "b=00ff00",
+		},
+		{
+			config: &Config{
+				Background: color.NRGBA{R: 0, G: 0, B: 255, A: 255},
+			},
+			output: "b=0000ff",
 		},
 		{
 			config: &Config{
