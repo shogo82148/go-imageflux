@@ -24,7 +24,7 @@ type Config struct {
 	Width          int
 	Height         int
 	DisableEnlarge bool
-	AspectMode
+	AspectMode     AspectMode
 
 	// TODO: Overlay Parameters.
 
