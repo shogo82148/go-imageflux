@@ -34,12 +34,22 @@ type Config struct {
 	Origin         Origin
 	Background     color.Color
 
-	// TODO: Overlay Parameters.
+	// Overlay Parameters.
+	Overlay Overlay
 
 	// Output Parameters.
 	Format              Format
 	Quality             int
 	DisableOptimization bool
+}
+
+// Overlay is the configure of an overlay image.
+type Overlay struct {
+	URL         string
+	Offset      image.Point
+	OffsetRatio image.Point
+	OffsetMax   image.Point
+	Origin      Origin
 }
 
 // AspectMode is aspect mode.
@@ -177,6 +187,11 @@ func (c *Config) String() string {
 		}
 	}
 
+	if overlay := c.Overlay.String(); overlay != "" {
+		buf = append(buf, overlay...)
+		buf = append(buf, ',')
+	}
+
 	if c.Format != "" {
 		buf = append(buf, 'f', '=')
 		buf = append(buf, c.Format...)
@@ -271,4 +286,38 @@ func (img *Image) urlAndSign() (*url.URL, string) {
 
 func (img *Image) String() string {
 	return img.URL().String()
+}
+
+func (o Overlay) String() string {
+	var buf []byte
+	if o.URL != "" {
+		buf = append(buf, 'l', '=')
+		buf = append(buf, url.QueryEscape(o.URL)...)
+		buf = append(buf, ',')
+	}
+	if o.Offset != image.ZP {
+		buf = append(buf, 'l', 'x', '=')
+		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
+		buf = append(buf, ',', 'l', 'y', '=')
+		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
+		buf = append(buf, ',')
+	}
+	if o.OffsetRatio != image.ZP && o.OffsetMax != image.ZP {
+		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
+		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
+		buf = append(buf, 'l', 'x', 'r', '=')
+		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
+		buf = append(buf, ',', 'l', 'y', 'r', '=')
+		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
+		buf = append(buf, ',')
+	}
+	if o.Origin != OriginDefault {
+		buf = append(buf, 'l', 'g', '=')
+		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
+		buf = append(buf, ',')
+	}
+	if len(buf) == 0 {
+		return ""
+	}
+	return string(buf[:len(buf)-1])
 }

@@ -160,6 +160,42 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				Overlay: Overlay{
+					URL: "http://example.com/",
+				},
+			},
+			output: "l=http%3A%2F%2Fexample.com%2F",
+		},
+		{
+			config: &Config{
+				Overlay: Overlay{
+					URL:    "http://example.com/",
+					Offset: image.Pt(100, 200),
+				},
+			},
+			output: "l=http%3A%2F%2Fexample.com%2F,lx=100,ly=200",
+		},
+		{
+			config: &Config{
+				Overlay: Overlay{
+					URL:         "http://example.com/",
+					OffsetRatio: image.Pt(25, 75),
+					OffsetMax:   image.Pt(100, 100),
+				},
+			},
+			output: "l=http%3A%2F%2Fexample.com%2F,lxr=0.25,lyr=0.75",
+		},
+		{
+			config: &Config{
+				Overlay: Overlay{
+					URL:    "http://example.com/",
+					Origin: OriginTopLeft,
+				},
+			},
+			output: "l=http%3A%2F%2Fexample.com%2F,lg=1",
+		},
+		{
+			config: &Config{
 				Format: FormatWebPFromPNG,
 			},
 			output: "f=webp:png",
