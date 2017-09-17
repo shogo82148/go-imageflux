@@ -91,6 +91,32 @@ const (
 	OriginBottomRight
 )
 
+func (o Origin) String() string {
+	switch o {
+	case OriginDefault:
+		return "default"
+	case OriginTopLeft:
+		return "top-left"
+	case OriginTopCenter:
+		return "top-center"
+	case OriginTopRight:
+		return "top-right"
+	case OriginMiddleLeft:
+		return "middle-left"
+	case OriginMiddleCenter:
+		return "middle-center"
+	case OriginMiddleRight:
+		return "middle-right"
+	case OriginBottomLeft:
+		return "bottom-left"
+	case OriginBottomCenter:
+		return "bottom-center"
+	case OriginBottomRight:
+		return "bottom-right"
+	}
+	return ""
+}
+
 // Format is the format of the output image.
 type Format string
 
