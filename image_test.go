@@ -93,6 +93,7 @@ func BenchmarkConfig(b *testing.B) {
 		Origin:         OriginBottomRight,
 		Background:     color.Black,
 		Rotate:         RotateLeftBottom,
+		Through:        ThroughJPEG | ThroughPNG | ThroughGIF,
 		Overlay: Overlay{
 			URL:         "http://example.com/",
 			Offset:      image.Pt(100, 100),
@@ -225,6 +226,24 @@ func TestConfig(t *testing.T) {
 				Rotate: RotateAuto,
 			},
 			output: "r=auto",
+		},
+		{
+			config: &Config{
+				Through: ThroughJPEG,
+			},
+			output: "through=jpg",
+		},
+		{
+			config: &Config{
+				Through: ThroughJPEG | ThroughGIF,
+			},
+			output: "through=jpg:gif",
+		},
+		{
+			config: &Config{
+				Through: ThroughJPEG | ThroughPNG | ThroughGIF,
+			},
+			output: "through=jpg:png:gif",
 		},
 		{
 			config: &Config{

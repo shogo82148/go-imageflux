@@ -41,6 +41,7 @@ type Config struct {
 	Origin         Origin
 	Background     color.Color
 	Rotate         Rotate
+	Through        Through
 
 	// Overlay Parameters.
 	Overlay Overlay
@@ -215,6 +216,41 @@ func (r Rotate) String() string {
 	return ""
 }
 
+// Through is an image format list for skipping converting.
+type Through int
+
+const (
+	// ThroughJPEG skips converting JPEG images.
+	ThroughJPEG Through = 1 << iota
+
+	// ThroughPNG skips converting PNG images.
+	ThroughPNG
+
+	// ThroughGIF skips converting GIF images.
+	ThroughGIF
+)
+
+func (t Through) String() string {
+	var buf [12]byte
+	return string(t.append(buf[:]))
+}
+
+func (t Through) append(buf []byte) []byte {
+	if t == 0 {
+		return buf
+	}
+	if (t & ThroughJPEG) != 0 {
+		buf = append(buf, "jpg:"...)
+	}
+	if (t & ThroughPNG) != 0 {
+		buf = append(buf, "png:"...)
+	}
+	if (t & ThroughGIF) != 0 {
+		buf = append(buf, "gif:"...)
+	}
+	return buf[:len(buf)-1]
+}
+
 func (c *Config) String() string {
 	if c == nil {
 		return ""
@@ -294,6 +330,11 @@ func (c *Config) String() string {
 			buf = strconv.AppendInt(buf, int64(c.Rotate), 10)
 			buf = append(buf, ',')
 		}
+	}
+	if c.Through != 0 {
+		buf = append(buf, "through="...)
+		buf = c.Through.append(buf)
+		buf = append(buf, ',')
 	}
 
 	if overlay := c.Overlay.String(); overlay != "" {
