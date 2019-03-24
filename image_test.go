@@ -6,6 +6,22 @@ import (
 	"testing"
 )
 
+func BenchmarkImage(b *testing.B) {
+	img := &Image{
+		Proxy: &Proxy{
+			Host:   "p1-47e91401.imageflux.jp",
+			Secret: "testsigningsecret",
+		},
+		Path: "/images/1.jpg",
+		Config: &Config{
+			Width: 200,
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		img.SignedURL()
+	}
+}
+
 func TestImage(t *testing.T) {
 	cases := []struct {
 		image  *Image
@@ -62,6 +78,34 @@ func TestImage(t *testing.T) {
 		if got != c.output {
 			t.Errorf("want %s, got %s", c.output, got)
 		}
+	}
+}
+
+func BenchmarkConfig(b *testing.B) {
+	config := &Config{
+		Width:          100,
+		Height:         100,
+		DisableEnlarge: true,
+		AspectMode:     AspectModePad,
+		Clip:           image.Rect(0, 0, 100, 100),
+		ClipRatio:      image.Rect(0, 0, 100, 100),
+		ClipMax:        image.Pt(100, 100),
+		Origin:         OriginBottomRight,
+		Background:     color.Black,
+		Rotate:         RotateLeftBottom,
+		Overlay: Overlay{
+			URL:         "http://example.com/",
+			Offset:      image.Pt(100, 100),
+			OffsetRatio: image.Pt(100, 100),
+			OffsetMax:   image.Pt(100, 100),
+			Origin:      OriginBottomRight,
+		},
+		Format:              FormatWebPFromPNG,
+		Quality:             75,
+		DisableOptimization: true,
+	}
+	for i := 0; i < b.N; i++ {
+		_ = config.String()
 	}
 }
 

@@ -12,7 +12,14 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return []byte{}
+	},
+}
 
 // Image is an image hosted on ImageFlux.
 type Image struct {
@@ -213,7 +220,8 @@ func (c *Config) String() string {
 		return ""
 	}
 
-	var buf []byte
+	buf := bufPool.Get().([]byte)[:0]
+
 	if c.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
@@ -266,8 +274,11 @@ func (c *Config) String() string {
 	if c.Background != nil {
 		r, g, b, a := c.Background.RGBA()
 		if a == 0xffff {
-			c := fmt.Sprintf("b=%02x%02x%02x,", r>>8, g>>8, b>>8)
-			buf = append(buf, c...)
+			buf = append(buf, 'b', '=')
+			buf = appendByte(buf, byte(r>>8))
+			buf = appendByte(buf, byte(g>>8))
+			buf = appendByte(buf, byte(b>>8))
+			buf = append(buf, ',')
 		} else if a == 0 {
 			buf = append(buf, "b=000000,"...)
 		} else {
@@ -304,10 +315,17 @@ func (c *Config) String() string {
 		buf = append(buf, 'o', '=', '0', ',')
 	}
 
-	if len(buf) == 0 {
-		return ""
+	var ret string
+	if len(buf) != 0 {
+		ret = string(buf[:len(buf)-1])
 	}
-	return string(buf[:len(buf)-1])
+	bufPool.Put(buf)
+	return ret
+}
+
+func appendByte(buf []byte, b byte) []byte {
+	const digits = "0123456789abcdef"
+	return append(buf, digits[b>>4], digits[b&0x0F])
 }
 
 func (a AspectMode) String() string {
