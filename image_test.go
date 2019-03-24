@@ -160,6 +160,18 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 0},
+			},
+			output: "b=000000",
+		},
+		{
+			config: &Config{
+				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 128},
+			},
+			output: "b=00000080",
+		},
+		{
+			config: &Config{
 				Overlay: Overlay{
 					URL: "http://example.com/",
 				},
@@ -217,7 +229,7 @@ func TestConfig(t *testing.T) {
 	for _, c := range cases {
 		got := c.config.String()
 		if got != c.output {
-			t.Errorf("want %s, got %s", c.output, got)
+			t.Errorf("%#v: want %s, got %s", c.config, c.output, got)
 		}
 	}
 }
