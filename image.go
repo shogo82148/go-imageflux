@@ -33,6 +33,7 @@ type Config struct {
 	ClipMax        image.Point
 	Origin         Origin
 	Background     color.Color
+	Rotate         Rotate
 
 	// Overlay Parameters.
 	Overlay Overlay
@@ -146,6 +147,67 @@ func (f Format) String() string {
 	return string(f)
 }
 
+// Rotate rotates the image.
+type Rotate int
+
+const (
+	// RotateDefault is the default value of Rotate. It is same as RotateTopLeft.
+	RotateDefault Rotate = iota
+
+	// RotateTopLeft does not anything.
+	RotateTopLeft
+
+	// RotateTopRight flips the image left and right.
+	RotateTopRight
+
+	// RotateBottomRight rotates the image 180 degrees.
+	RotateBottomRight
+
+	// RotateBottomLeft flips the image upside down.
+	RotateBottomLeft
+
+	// RotateLeftTop mirrors the image around the diagonal axis.
+	RotateLeftTop
+
+	// RotateRightTop rotates the image left 90 degrees.
+	RotateRightTop
+
+	// RotateRightBottom rotates the image 180 degrees and mirrors the image around the diagonal axis.
+	RotateRightBottom
+
+	// RotateLeftBottom rotates the image right 90 degrees.
+	RotateLeftBottom
+
+	// RotateAuto parses the Orientation of the Exif information and rorates the image.
+	RotateAuto Rotate = -1
+)
+
+func (r Rotate) String() string {
+	switch r {
+	case RotateDefault:
+		return "default"
+	case RotateTopLeft:
+		return "top-left"
+	case RotateTopRight:
+		return "top-right"
+	case RotateBottomRight:
+		return "bottom-right"
+	case RotateBottomLeft:
+		return "bottom-left"
+	case RotateLeftTop:
+		return "left-top"
+	case RotateRightTop:
+		return "right-top"
+	case RotateRightBottom:
+		return "right-bottom"
+	case RotateLeftBottom:
+		return "left-bottom"
+	case RotateAuto:
+		return "auto"
+	}
+	return ""
+}
+
 func (c *Config) String() string {
 	if c == nil {
 		return ""
@@ -211,6 +273,15 @@ func (c *Config) String() string {
 		} else {
 			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
 			buf = append(buf, c...)
+		}
+	}
+	if c.Rotate != RotateDefault {
+		if c.Rotate == RotateAuto {
+			buf = append(buf, "r=auto,"...)
+		} else {
+			buf = append(buf, "r="...)
+			buf = strconv.AppendInt(buf, int64(c.Rotate), 10)
+			buf = append(buf, ',')
 		}
 	}
 

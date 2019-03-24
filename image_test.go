@@ -172,6 +172,18 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				Rotate: RotateLeftBottom,
+			},
+			output: "r=8",
+		},
+		{
+			config: &Config{
+				Rotate: RotateAuto,
+			},
+			output: "r=auto",
+		},
+		{
+			config: &Config{
 				Overlay: Overlay{
 					URL: "http://example.com/",
 				},
