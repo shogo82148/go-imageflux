@@ -207,12 +207,9 @@ func (c *Config) String() string {
 			c := fmt.Sprintf("b=%02x%02x%02x,", r>>8, g>>8, b>>8)
 			buf = append(buf, c...)
 		} else if a == 0 {
-			buf = append(buf, "b=000000"...)
+			buf = append(buf, "b=000000,"...)
 		} else {
-			r = (r * 0xffff) / a
-			g = (g * 0xffff) / a
-			b = (b * 0xffff) / a
-			c := fmt.Sprintf("b=%02x%02x%02x,", r>>8, g>>8, b>>8)
+			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
 			buf = append(buf, c...)
 		}
 	}
