@@ -12,7 +12,14 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return []byte{}
+	},
+}
 
 // Image is an image hosted on ImageFlux.
 type Image struct {
@@ -213,7 +220,8 @@ func (c *Config) String() string {
 		return ""
 	}
 
-	var buf []byte
+	buf := bufPool.Get().([]byte)[:0]
+
 	if c.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
@@ -304,10 +312,12 @@ func (c *Config) String() string {
 		buf = append(buf, 'o', '=', '0', ',')
 	}
 
-	if len(buf) == 0 {
-		return ""
+	var ret string
+	if len(buf) != 0 {
+		ret = string(buf[:len(buf)-1])
 	}
-	return string(buf[:len(buf)-1])
+	bufPool.Put(buf)
+	return ret
 }
 
 func (a AspectMode) String() string {
