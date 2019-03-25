@@ -29,18 +29,38 @@ type Image struct {
 
 // Config is configure of image.
 type Config struct {
-	// Scaling Parameters.
-	Width          int
-	Height         int
+	// Width is width in pixel of the scaled image.
+	Width int
+
+	// Height is height in pixel of the scaled image.
+	Height int
+
+	// DisableEnlarge disables enlarge.
 	DisableEnlarge bool
-	AspectMode     AspectMode
-	Clip           image.Rectangle
-	ClipRatio      image.Rectangle
-	ClipMax        image.Point
-	Origin         Origin
-	Background     color.Color
-	Rotate         Rotate
-	Through        Through
+
+	// AspectMode is aspect mode.
+	AspectMode AspectMode
+
+	// Clip is a position in pixel of clipping area.
+	Clip image.Rectangle
+
+	// ClipRatio is a position in ratio of clipping area.
+	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
+	ClipRatio image.Rectangle
+
+	// ClipMax is the denominators of ClipRatio.
+	ClipMax image.Point
+
+	// Origin is the position of the image origin.
+	Origin Origin
+
+	// Background is background color.
+	Background color.Color
+
+	// Rorate rotates the image.
+	Rotate Rotate
+
+	Through Through
 
 	// Overlay Parameters.
 	Overlays []Overlay
@@ -128,15 +148,34 @@ const (
 type Origin int
 
 const (
+	// OriginDefault is default origin.
 	OriginDefault Origin = iota
+
+	// OriginTopLeft is top-left
 	OriginTopLeft
+
+	// OriginTopCenter is top-center
 	OriginTopCenter
+
+	// OriginTopRight is top-right
 	OriginTopRight
+
+	// OriginMiddleLeft is middle-left
 	OriginMiddleLeft
+
+	// OriginMiddleCenter is middle-center
 	OriginMiddleCenter
+
+	// OriginMiddleRight is middle-right
 	OriginMiddleRight
+
+	// OriginBottomLeft is bottom-left
 	OriginBottomLeft
+
+	// OriginBottomCenter is bottom-center
 	OriginBottomCenter
+
+	// OriginBottomRight is bottom-right
 	OriginBottomRight
 )
 
