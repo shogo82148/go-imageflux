@@ -94,12 +94,24 @@ func BenchmarkConfig(b *testing.B) {
 		Background:     color.Black,
 		Rotate:         RotateLeftBottom,
 		Through:        ThroughJPEG | ThroughPNG | ThroughGIF,
-		Overlay: Overlay{
-			URL:         "http://example.com/",
-			Offset:      image.Pt(100, 100),
-			OffsetRatio: image.Pt(100, 100),
-			OffsetMax:   image.Pt(100, 100),
-			Origin:      OriginBottomRight,
+		Overlays: []Overlay{
+			{
+				URL:            "http://example.com/",
+				Width:          100,
+				Height:         100,
+				DisableEnlarge: true,
+				AspectMode:     AspectModePad,
+				Clip:           image.Rect(0, 0, 100, 100),
+				ClipRatio:      image.Rect(0, 0, 100, 100),
+				ClipMax:        image.Pt(100, 100),
+				Origin:         OriginBottomRight,
+				Background:     color.Black,
+				Rotate:         RotateLeftBottom,
+				Offset:         image.Pt(100, 100),
+				OffsetRatio:    image.Pt(100, 100),
+				OffsetMax:      image.Pt(100, 100),
+				OverlayOrigin:  OriginBottomRight,
+			},
 		},
 		Format:              FormatWebPFromPNG,
 		Quality:             75,
@@ -247,39 +259,54 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlay: Overlay{
+				Overlays: []Overlay{{
 					URL: "http://example.com/",
-				},
+				}},
 			},
-			output: "l=http%3A%2F%2Fexample.com%2F",
+			output: "l=(%2fhttp%3A%2F%2Fexample.com%2F)",
 		},
 		{
 			config: &Config{
-				Overlay: Overlay{
+				Overlays: []Overlay{{
 					URL:    "http://example.com/",
 					Offset: image.Pt(100, 200),
-				},
+				}},
 			},
-			output: "l=http%3A%2F%2Fexample.com%2F,lx=100,ly=200",
+			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F)",
 		},
 		{
 			config: &Config{
-				Overlay: Overlay{
+				Overlays: []Overlay{{
 					URL:         "http://example.com/",
 					OffsetRatio: image.Pt(25, 75),
 					OffsetMax:   image.Pt(100, 100),
-				},
+				}},
 			},
-			output: "l=http%3A%2F%2Fexample.com%2F,lxr=0.25,lyr=0.75",
+			output: "l=(xr=0.25,yr=0.75%2fhttp%3A%2F%2Fexample.com%2F)",
 		},
 		{
 			config: &Config{
-				Overlay: Overlay{
-					URL:    "http://example.com/",
-					Origin: OriginTopLeft,
+				Overlays: []Overlay{{
+					URL:           "http://example.com/",
+					OverlayOrigin: OriginTopLeft,
+				}},
+			},
+			output: "l=(lg=1%2fhttp%3A%2F%2Fexample.com%2F)",
+		},
+		{
+			config: &Config{
+				Overlays: []Overlay{
+					{
+						URL:    "http://example.com/1.png",
+						Offset: image.Pt(100, 200),
+					},
+					{
+						URL:    "http://example.com/2.png",
+						Offset: image.Pt(200, 100),
+					},
 				},
 			},
-			output: "l=http%3A%2F%2Fexample.com%2F,lg=1",
+			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F1.png,x=200,y=100%2fhttp%3A%2F%2Fexample.com%2F2.png)",
 		},
 		{
 			config: &Config{

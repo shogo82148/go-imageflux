@@ -44,7 +44,7 @@ type Config struct {
 	Through        Through
 
 	// Overlay Parameters.
-	Overlay Overlay
+	Overlays []Overlay
 
 	// Output Parameters.
 	Format              Format
@@ -54,11 +54,52 @@ type Config struct {
 
 // Overlay is the configure of an overlay image.
 type Overlay struct {
-	URL         string
-	Offset      image.Point
+	// URL is an url for overlay image.
+	URL string
+
+	// Width is width in pixel of the scaled image.
+	Width int
+
+	// Height is height in pixel of the scaled image.
+	Height int
+
+	// DisableEnlarge disables enlarge.
+	DisableEnlarge bool
+
+	// AspectMode is aspect mode.
+	AspectMode AspectMode
+
+	// Clip is a position in pixel of clipping area.
+	Clip image.Rectangle
+
+	// ClipRatio is a position in ratio of clipping area.
+	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
+	ClipRatio image.Rectangle
+
+	// ClipMax is the denominators of ClipRatio.
+	ClipMax image.Point
+
+	// Origin is the position of the image origin.
+	Origin Origin
+
+	// Background is background color.
+	Background color.Color
+
+	// Rorate rotates the image.
+	Rotate Rotate
+
+	// Offset is an offset in pixel of overlay image.
+	Offset image.Point
+
+	// OffsetRatio is an offset in ratio of overlay image.
+	// The coordinates of the rectangle are divided by OffsetMax.X or OffsetMax.Y.
 	OffsetRatio image.Point
-	OffsetMax   image.Point
-	Origin      Origin
+
+	// OffsetMax is the denominators of OffsetRatio.
+	OffsetMax image.Point
+
+	// OverlayOrigin is the postion of the overlay image origin.
+	OverlayOrigin Origin
 }
 
 // AspectMode is aspect mode.
@@ -337,9 +378,13 @@ func (c *Config) String() string {
 		buf = append(buf, ',')
 	}
 
-	if overlay := c.Overlay.String(); overlay != "" {
-		buf = append(buf, overlay...)
-		buf = append(buf, ',')
+	if len(c.Overlays) > 0 {
+		buf = append(buf, 'l', '=', '(')
+		for _, overlay := range c.Overlays {
+			buf = overlay.append(buf)
+			buf = append(buf, ',')
+		}
+		buf = append(buf[:len(buf)-1], ')', ',')
 	}
 
 	if c.Format != "" {
@@ -446,35 +491,110 @@ func (img *Image) String() string {
 }
 
 func (o Overlay) String() string {
-	var buf []byte
-	if o.URL != "" {
-		buf = append(buf, 'l', '=')
-		buf = append(buf, url.QueryEscape(o.URL)...)
+	return string(o.append([]byte{}))
+}
+
+func (o Overlay) append(buf []byte) []byte {
+	if o.Width != 0 {
+		buf = append(buf, 'w', '=')
+		buf = strconv.AppendInt(buf, int64(o.Width), 10)
 		buf = append(buf, ',')
 	}
+	if o.Height != 0 {
+		buf = append(buf, 'h', '=')
+		buf = strconv.AppendInt(buf, int64(o.Height), 10)
+		buf = append(buf, ',')
+	}
+	if o.DisableEnlarge {
+		buf = append(buf, 'u', '=', '0', ',')
+	}
+	if o.AspectMode != AspectModeDefault {
+		buf = append(buf, 'a', '=')
+		buf = strconv.AppendInt(buf, int64(o.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
+	if o.Clip != image.ZR {
+		buf = append(buf, 'c', '=')
+		buf = strconv.AppendInt(buf, int64(o.Clip.Min.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(o.Clip.Min.Y), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(o.Clip.Max.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(o.Clip.Max.Y), 10)
+		buf = append(buf, ',')
+	}
+	if o.ClipRatio != image.ZR && o.ClipMax != image.ZP {
+		x1 := float64(o.ClipRatio.Min.X) / float64(o.ClipMax.X)
+		y1 := float64(o.ClipRatio.Min.Y) / float64(o.ClipMax.Y)
+		x2 := float64(o.ClipRatio.Max.X) / float64(o.ClipMax.X)
+		y2 := float64(o.ClipRatio.Max.Y) / float64(o.ClipMax.Y)
+		buf = append(buf, 'c', 'r', '=')
+		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
+		buf = append(buf, ',')
+	}
+	if o.Origin != OriginDefault {
+		buf = append(buf, 'g', '=')
+		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
+		buf = append(buf, ',')
+	}
+	if o.Background != nil {
+		r, g, b, a := o.Background.RGBA()
+		if a == 0xffff {
+			buf = append(buf, 'b', '=')
+			buf = appendByte(buf, byte(r>>8))
+			buf = appendByte(buf, byte(g>>8))
+			buf = appendByte(buf, byte(b>>8))
+			buf = append(buf, ',')
+		} else if a == 0 {
+			buf = append(buf, "b=000000,"...)
+		} else {
+			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
+			buf = append(buf, c...)
+		}
+	}
+	if o.Rotate != RotateDefault {
+		if o.Rotate == RotateAuto {
+			buf = append(buf, "r=auto,"...)
+		} else {
+			buf = append(buf, "r="...)
+			buf = strconv.AppendInt(buf, int64(o.Rotate), 10)
+			buf = append(buf, ',')
+		}
+	}
+
 	if o.Offset != image.ZP {
-		buf = append(buf, 'l', 'x', '=')
+		buf = append(buf, 'x', '=')
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
-		buf = append(buf, ',', 'l', 'y', '=')
+		buf = append(buf, ',', 'y', '=')
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
 		buf = append(buf, ',')
 	}
 	if o.OffsetRatio != image.ZP && o.OffsetMax != image.ZP {
 		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
 		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
-		buf = append(buf, 'l', 'x', 'r', '=')
+		buf = append(buf, 'x', 'r', '=')
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
-		buf = append(buf, ',', 'l', 'y', 'r', '=')
+		buf = append(buf, ',', 'y', 'r', '=')
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
-	if o.Origin != OriginDefault {
+	if o.OverlayOrigin != OriginDefault {
 		buf = append(buf, 'l', 'g', '=')
-		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
+		buf = strconv.AppendInt(buf, int64(o.OverlayOrigin), 10)
 		buf = append(buf, ',')
 	}
-	if len(buf) == 0 {
-		return ""
+
+	if len(buf) > 0 && buf[len(buf)-1] == ',' {
+		buf = buf[:len(buf)-1]
 	}
-	return string(buf[:len(buf)-1])
+	buf = append(buf, "%2f"...)
+	buf = append(buf, url.QueryEscape(o.URL)...)
+	return buf
 }
