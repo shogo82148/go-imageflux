@@ -74,8 +74,7 @@ func TestImage(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := c.image.SignedURL().String()
-		if got != c.output {
+		if got := c.image.SignedURL(); got != c.output {
 			t.Errorf("want %s, got %s", c.output, got)
 		}
 	}
@@ -329,8 +328,7 @@ func TestConfig(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := c.config.String()
-		if got != c.output {
+		if got := c.config.String(); got != c.output {
 			t.Errorf("%#v: want %s, got %s", c.config, c.output, got)
 		}
 	}

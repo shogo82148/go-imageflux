@@ -9,7 +9,6 @@ import (
 	"image/color"
 	"io"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -296,8 +295,17 @@ func (c *Config) String() string {
 	if c == nil {
 		return ""
 	}
-
 	buf := bufPool.Get().([]byte)[:0]
+	buf = c.append(buf)
+	str := string(buf)
+	bufPool.Put(buf)
+	return str
+}
+
+func (c *Config) append(buf []byte) []byte {
+	if c == nil {
+		return buf
+	}
 
 	if c.Width != 0 {
 		buf = append(buf, 'w', '=')
@@ -401,12 +409,10 @@ func (c *Config) String() string {
 		buf = append(buf, 'o', '=', '0', ',')
 	}
 
-	var ret string
 	if len(buf) != 0 {
-		ret = string(buf[:len(buf)-1])
+		buf = buf[:len(buf)-1]
 	}
-	bufPool.Put(buf)
-	return ret
+	return buf
 }
 
 func appendByte(buf []byte, b byte) []byte {
@@ -428,66 +434,62 @@ func (a AspectMode) String() string {
 	return ""
 }
 
-// URL returns the URL of the image.
-func (img *Image) URL() *url.URL {
-	p := img.Path
-	if c := img.Config.String(); c != "" {
-		p = path.Join("c", c, p)
-	}
-
-	return &url.URL{
-		Scheme: "https",
-		Host:   img.Proxy.Host,
-		Path:   p,
-	}
-}
-
 // SignedURL returns the URL of the image with the signature.
-func (img *Image) SignedURL() *url.URL {
-	u, s := img.urlAndSign()
+func (img *Image) SignedURL() string {
+	path, s := img.pathAndSign()
 	if s == "" {
-		return u
+		return "https://" + img.Proxy.Host + path
 	}
-
-	if strings.HasPrefix(u.Path, "/c/") {
-		u.Path = "/c/sig=" + s + "," + u.Path[len("/c/"):]
-		return u
+	if strings.HasPrefix(path, "/c/") {
+		return "https://" + img.Proxy.Host + "/c/sig=" + s + "," + strings.TrimPrefix(path, "/c/")
 	}
-
-	if strings.HasPrefix(u.Path, "/c!/") {
-		u.Path = "/c!/sig=" + s + "," + u.Path[len("/c!/"):]
-		return u
-	}
-
-	u.Path = "/c/sig=" + s + u.Path
-	return u
+	return "https://" + img.Proxy.Host + "/c/sig=" + s + path
 }
 
 // Sign returns the signature.
 func (img *Image) Sign() string {
-	_, s := img.urlAndSign()
+	_, s := img.pathAndSign()
 	return s
 }
 
-func (img *Image) urlAndSign() (*url.URL, string) {
-	u := img.URL()
-	if img.Proxy == nil || img.Proxy.Secret == "" {
-		return u, ""
+func (img *Image) pathAndSign() (string, string) {
+	buf := bufPool.Get().([]byte)[:0]
+	buf = append(buf, "/c/"...)
+	buf = img.Config.append(buf)
+	if len(buf) == len("/c/") {
+		buf = buf[:0]
+	}
+	if len(img.Path) == 0 || img.Path[0] != '/' {
+		buf = append(buf, '/')
+	}
+	buf = append(buf, img.Path...)
+	path := string(buf)
+	bufPool.Put(buf)
+
+	if img.Proxy.Secret == "" {
+		return path, ""
 	}
 
-	p := u.Path
-	if len(p) < 1 || p[0] != '/' {
-		p = "/" + p
-		u.Path = p
-	}
 	mac := hmac.New(sha256.New, []byte(img.Proxy.Secret))
-	io.WriteString(mac, p)
+	io.WriteString(mac, path)
 
-	return u, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	return path, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func (img *Image) String() string {
-	return img.URL().String()
+	buf := bufPool.Get().([]byte)[:0]
+
+	buf = append(buf, "https://"...)
+	buf = append(buf, img.Proxy.Host...)
+	buf = append(buf, "/c/"...)
+	buf = img.Config.append(buf)
+	if len(img.Path) == 0 || img.Path[0] != '/' {
+		buf = append(buf, '/')
+	}
+	buf = append(buf, img.Path...)
+	str := string(buf)
+	bufPool.Put(buf)
+	return str
 }
 
 func (o Overlay) String() string {
