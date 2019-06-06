@@ -334,6 +334,17 @@ func TestConfig(t *testing.T) {
 			},
 			output: "unsharp=10x1",
 		},
+		{
+			config: &Config{
+				Unsharp: Unsharp{
+					Radius:    10,
+					Sigma:     1.0,
+					Gain:      1.0,
+					Threshold: 0.5,
+				},
+			},
+			output: "unsharp=10x1+1+0.5",
+		},
 	}
 
 	for _, c := range cases {

@@ -135,6 +135,12 @@ func (u Unsharp) append(buf []byte) []byte {
 	buf = strconv.AppendInt(buf, int64(u.Radius), 10)
 	buf = append(buf, 'x')
 	buf = strconv.AppendFloat(buf, u.Sigma, 'f', -1, 64)
+	if u.Gain != 0 && u.Threshold != 0 {
+		buf = append(buf, '+')
+		buf = strconv.AppendFloat(buf, u.Gain, 'f', -1, 64)
+		buf = append(buf, '+')
+		buf = strconv.AppendFloat(buf, u.Threshold, 'f', -1, 64)
+	}
 	return buf
 }
 
