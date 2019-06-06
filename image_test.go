@@ -345,6 +345,15 @@ func TestConfig(t *testing.T) {
 			},
 			output: "unsharp=10x1+1+0.5",
 		},
+		{
+			config: &Config{
+				Blur: Blur{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+			output: "blur=10x1",
+		},
 	}
 
 	for _, c := range cases {

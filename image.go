@@ -71,6 +71,7 @@ type Config struct {
 	DisableOptimization bool
 
 	Unsharp Unsharp
+	Blur    Blur
 }
 
 // Overlay is the configure of an overlay image.
@@ -141,6 +142,19 @@ func (u Unsharp) append(buf []byte) []byte {
 		buf = append(buf, '+')
 		buf = strconv.AppendFloat(buf, u.Threshold, 'f', -1, 64)
 	}
+	return buf
+}
+
+// Blur is a blur config.
+type Blur struct {
+	Radius int
+	Sigma  float64
+}
+
+func (b Blur) append(buf []byte) []byte {
+	buf = strconv.AppendInt(buf, int64(b.Radius), 10)
+	buf = append(buf, 'x')
+	buf = strconv.AppendFloat(buf, b.Sigma, 'f', -1, 64)
 	return buf
 }
 
@@ -474,6 +488,12 @@ func (c *Config) append(buf []byte) []byte {
 	if c.Unsharp.Radius != 0 {
 		buf = append(buf, "unsharp="...)
 		buf = c.Unsharp.append(buf)
+		buf = append(buf, ',')
+	}
+
+	if c.Blur.Radius != 0 {
+		buf = append(buf, "blur="...)
+		buf = c.Blur.append(buf)
 		buf = append(buf, ',')
 	}
 
