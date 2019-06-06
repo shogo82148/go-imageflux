@@ -69,6 +69,9 @@ type Config struct {
 	Format              Format
 	Quality             int
 	DisableOptimization bool
+
+	Unsharp Unsharp
+	Blur    Blur
 }
 
 // Overlay is the configure of an overlay image.
@@ -119,6 +122,40 @@ type Overlay struct {
 
 	// OverlayOrigin is the postion of the overlay image origin.
 	OverlayOrigin Origin
+}
+
+// Unsharp is an unsharp filter config.
+type Unsharp struct {
+	Radius    int
+	Sigma     float64
+	Gain      float64
+	Threshold float64
+}
+
+func (u Unsharp) append(buf []byte) []byte {
+	buf = strconv.AppendInt(buf, int64(u.Radius), 10)
+	buf = append(buf, 'x')
+	buf = strconv.AppendFloat(buf, u.Sigma, 'f', -1, 64)
+	if u.Gain != 0 && u.Threshold != 0 {
+		buf = append(buf, '+')
+		buf = strconv.AppendFloat(buf, u.Gain, 'f', -1, 64)
+		buf = append(buf, '+')
+		buf = strconv.AppendFloat(buf, u.Threshold, 'f', -1, 64)
+	}
+	return buf
+}
+
+// Blur is a blur config.
+type Blur struct {
+	Radius int
+	Sigma  float64
+}
+
+func (b Blur) append(buf []byte) []byte {
+	buf = strconv.AppendInt(buf, int64(b.Radius), 10)
+	buf = append(buf, 'x')
+	buf = strconv.AppendFloat(buf, b.Sigma, 'f', -1, 64)
+	return buf
 }
 
 // AspectMode is aspect mode.
@@ -446,6 +483,18 @@ func (c *Config) append(buf []byte) []byte {
 	}
 	if c.DisableOptimization {
 		buf = append(buf, 'o', '=', '0', ',')
+	}
+
+	if c.Unsharp.Radius != 0 {
+		buf = append(buf, "unsharp="...)
+		buf = c.Unsharp.append(buf)
+		buf = append(buf, ',')
+	}
+
+	if c.Blur.Radius != 0 {
+		buf = append(buf, "blur="...)
+		buf = c.Blur.append(buf)
+		buf = append(buf, ',')
 	}
 
 	if len(buf) != 0 {

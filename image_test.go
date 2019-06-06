@@ -115,6 +115,16 @@ func BenchmarkConfig(b *testing.B) {
 		Format:              FormatWebPFromPNG,
 		Quality:             75,
 		DisableOptimization: true,
+		Unsharp: Unsharp{
+			Radius:    10,
+			Sigma:     1.0,
+			Gain:      1.0,
+			Threshold: 0.5,
+		},
+		Blur: Blur{
+			Radius: 10,
+			Sigma:  1.0,
+		},
 	}
 	for i := 0; i < b.N; i++ {
 		_ = config.String()
@@ -324,6 +334,35 @@ func TestConfig(t *testing.T) {
 				DisableOptimization: true,
 			},
 			output: "o=0",
+		},
+		{
+			config: &Config{
+				Unsharp: Unsharp{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+			output: "unsharp=10x1",
+		},
+		{
+			config: &Config{
+				Unsharp: Unsharp{
+					Radius:    10,
+					Sigma:     1.0,
+					Gain:      1.0,
+					Threshold: 0.5,
+				},
+			},
+			output: "unsharp=10x1+1+0.5",
+		},
+		{
+			config: &Config{
+				Blur: Blur{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+			output: "blur=10x1",
 		},
 	}
 
