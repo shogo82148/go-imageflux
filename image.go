@@ -57,7 +57,7 @@ type Config struct {
 	// Background is background color.
 	Background color.Color
 
-	// Rorate rotates the image.
+	// Rotate rotates the image.
 	Rotate Rotate
 
 	Through Through
@@ -104,7 +104,7 @@ type Overlay struct {
 	// Background is background color.
 	Background color.Color
 
-	// Rorate rotates the image.
+	// Rotate rotates the image.
 	Rotate Rotate
 
 	// Offset is an offset in pixel of overlay image.
@@ -265,7 +265,7 @@ const (
 	// RotateLeftBottom rotates the image right 90 degrees.
 	RotateLeftBottom
 
-	// RotateAuto parses the Orientation of the Exif information and rorates the image.
+	// RotateAuto parses the Orientation of the Exif information and rotates the image.
 	RotateAuto Rotate = -1
 )
 
