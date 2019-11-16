@@ -1,0 +1,25 @@
+name: test
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go:
+          - "1.9"
+          - "1.10"
+          - "1.11"
+          - "1.12"
+          - "1.13"
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Check out the code
+        uses: actions/checkout@v1
+
+      - name: Test
+        run: go test -v -coverprofile=coverage.out ./...
