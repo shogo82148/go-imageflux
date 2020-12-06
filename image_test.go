@@ -315,7 +315,7 @@ func TestConfig(t *testing.T) {
 					},
 				},
 			},
-			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F1.png,x=200,y=100%2fhttp%3A%2F%2Fexample.com%2F2.png)",
+			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F1.png),l=(x=200,y=100%2fhttp%3A%2F%2Fexample.com%2F2.png)",
 		},
 		{
 			config: &Config{

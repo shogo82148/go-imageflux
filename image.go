@@ -463,12 +463,12 @@ func (c *Config) append(buf []byte) []byte {
 	}
 
 	if len(c.Overlays) > 0 {
-		buf = append(buf, 'l', '=', '(')
 		for _, overlay := range c.Overlays {
+			buf = append(buf, 'l', '=', '(')
 			buf = overlay.append(buf)
 			buf = append(buf, ',')
+			buf = append(buf[:len(buf)-1], ')', ',')
 		}
-		buf = append(buf[:len(buf)-1], ')', ',')
 	}
 
 	if c.Format != "" {
