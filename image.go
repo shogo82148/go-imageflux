@@ -383,6 +383,7 @@ func (c *Config) append(buf []byte) []byte {
 		return buf
 	}
 
+	l := len(buf)
 	if c.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
@@ -497,7 +498,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 
-	if len(buf) != 0 {
+	if len(buf) != l {
 		buf = buf[:len(buf)-1]
 	}
 	return buf
