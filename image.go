@@ -16,7 +16,8 @@ import (
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		return []byte{}
+		buf := make([]byte, 0)
+		return &buf
 	},
 }
 
@@ -371,9 +372,9 @@ func (c *Config) String() string {
 	if c == nil {
 		return ""
 	}
-	buf := bufPool.Get().([]byte)[:0]
-	buf = c.append(buf)
-	str := string(buf)
+	buf := bufPool.Get().(*[]byte)
+	*buf = c.append((*buf)[:0])
+	str := string(*buf)
 	bufPool.Put(buf)
 	return str
 }
@@ -542,7 +543,8 @@ func (img *Image) Sign() string {
 }
 
 func (img *Image) pathAndSign() (string, string) {
-	buf := bufPool.Get().([]byte)[:0]
+	pbuf := bufPool.Get().(*[]byte)
+	buf := (*pbuf)[:0]
 	buf = append(buf, "/c/"...)
 	buf = img.Config.append(buf)
 	if len(buf) == len("/c/") {
@@ -553,7 +555,8 @@ func (img *Image) pathAndSign() (string, string) {
 	}
 	buf = append(buf, img.Path...)
 	path := string(buf)
-	bufPool.Put(buf)
+	*pbuf = buf
+	bufPool.Put(pbuf)
 
 	if img.Proxy.Secret == "" {
 		return path, ""
@@ -566,7 +569,8 @@ func (img *Image) pathAndSign() (string, string) {
 }
 
 func (img *Image) String() string {
-	buf := bufPool.Get().([]byte)[:0]
+	pbuf := bufPool.Get().(*[]byte)
+	buf := (*pbuf)[:0]
 
 	buf = append(buf, "https://"...)
 	buf = append(buf, img.Proxy.Host...)
@@ -577,7 +581,8 @@ func (img *Image) String() string {
 	}
 	buf = append(buf, img.Path...)
 	str := string(buf)
-	bufPool.Put(buf)
+	*pbuf = buf
+	bufPool.Put(pbuf)
 	return str
 }
 
