@@ -543,7 +543,7 @@ func (img *Image) Sign() string {
 func (img *Image) pathAndSign() (string, string) {
 	buf := bufPool.Get().([]byte)[:0]
 	buf = append(buf, "/c/"...)
-	buf = img.Config.append(buf)
+	buf = append(buf, img.Config.String()...)
 	if len(buf) == len("/c/") {
 		buf = buf[:0]
 	}

@@ -64,6 +64,17 @@ func TestImage(t *testing.T) {
 					Host:   "p1-47e91401.imageflux.jp",
 					Secret: "testsigningsecret",
 				},
+				Path:   "/images/1.jpg",
+				Config: &Config{},
+			},
+			"https://p1-47e91401.imageflux.jp/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "p1-47e91401.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
 				Path: "/images/1.jpg",
 				Config: &Config{
 					Width: 200,
