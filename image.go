@@ -591,6 +591,7 @@ func (o Overlay) String() string {
 }
 
 func (o Overlay) append(buf []byte) []byte {
+	l := len(buf)
 	if o.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(o.Width), 10)
@@ -687,7 +688,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 
-	if len(buf) > 0 && buf[len(buf)-1] == ',' {
+	if len(buf) > l && buf[len(buf)-1] == ',' {
 		buf = buf[:len(buf)-1]
 	}
 	buf = append(buf, "%2f"...)
