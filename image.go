@@ -379,6 +379,8 @@ func (c *Config) String() string {
 }
 
 func (c *Config) append(buf []byte) []byte {
+	var zr image.Rectangle
+	var zp image.Point
 	if c == nil {
 		return buf
 	}
@@ -401,7 +403,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
 		buf = append(buf, ',')
 	}
-	if c.Clip != image.ZR {
+	if c.Clip != zr {
 		buf = append(buf, 'c', '=')
 		buf = strconv.AppendInt(buf, int64(c.Clip.Min.X), 10)
 		buf = append(buf, ':')
@@ -412,7 +414,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(c.Clip.Max.Y), 10)
 		buf = append(buf, ',')
 	}
-	if c.ClipRatio != image.ZR && c.ClipMax != image.ZP {
+	if c.ClipRatio != zr && c.ClipMax != zp {
 		x1 := float64(c.ClipRatio.Min.X) / float64(c.ClipMax.X)
 		y1 := float64(c.ClipRatio.Min.Y) / float64(c.ClipMax.Y)
 		x2 := float64(c.ClipRatio.Max.X) / float64(c.ClipMax.X)
@@ -585,6 +587,9 @@ func (o Overlay) String() string {
 }
 
 func (o Overlay) append(buf []byte) []byte {
+	var zr image.Rectangle
+	var zp image.Point
+
 	if o.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(o.Width), 10)
@@ -603,7 +608,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(o.AspectMode-1), 10)
 		buf = append(buf, ',')
 	}
-	if o.Clip != image.ZR {
+	if o.Clip != zr {
 		buf = append(buf, 'c', '=')
 		buf = strconv.AppendInt(buf, int64(o.Clip.Min.X), 10)
 		buf = append(buf, ':')
@@ -614,7 +619,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(o.Clip.Max.Y), 10)
 		buf = append(buf, ',')
 	}
-	if o.ClipRatio != image.ZR && o.ClipMax != image.ZP {
+	if o.ClipRatio != zr && o.ClipMax != zp {
 		x1 := float64(o.ClipRatio.Min.X) / float64(o.ClipMax.X)
 		y1 := float64(o.ClipRatio.Min.Y) / float64(o.ClipMax.Y)
 		x2 := float64(o.ClipRatio.Max.X) / float64(o.ClipMax.X)
@@ -659,14 +664,14 @@ func (o Overlay) append(buf []byte) []byte {
 		}
 	}
 
-	if o.Offset != image.ZP {
+	if o.Offset != zp {
 		buf = append(buf, 'x', '=')
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
 		buf = append(buf, ',', 'y', '=')
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
 		buf = append(buf, ',')
 	}
-	if o.OffsetRatio != image.ZP && o.OffsetMax != image.ZP {
+	if o.OffsetRatio != zp && o.OffsetMax != zp {
 		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
 		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
 		buf = append(buf, 'x', 'r', '=')
