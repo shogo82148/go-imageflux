@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -16,7 +15,7 @@ import (
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		buf := make([]byte, 0)
+		buf := make([]byte, 0, 32)
 		return &buf
 	},
 }
@@ -555,17 +554,24 @@ func (img *Image) pathAndSign() (string, string) {
 	}
 	buf = append(buf, img.Path...)
 	path := string(buf)
-	*pbuf = buf
-	bufPool.Put(pbuf)
 
 	if img.Proxy.Secret == "" {
+		*pbuf = buf
+		bufPool.Put(pbuf)
 		return path, ""
 	}
 
 	mac := hmac.New(sha256.New, []byte(img.Proxy.Secret))
-	io.WriteString(mac, path)
+	mac.Write(buf)
+	buf = mac.Sum(buf[:0])
+	buf2 := make([]byte, len("1.")+base64.URLEncoding.EncodedLen(len(buf)))
+	buf2[0] = '1'
+	buf2[1] = '.'
+	base64.URLEncoding.Encode(buf2[2:], buf)
 
-	return path, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	*pbuf = buf
+	bufPool.Put(pbuf)
+	return path, string(buf2[:])
 }
 
 func (img *Image) String() string {
