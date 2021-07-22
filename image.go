@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -16,7 +15,8 @@ import (
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		return []byte{}
+		buf := make([]byte, 0, 32)
+		return &buf
 	},
 }
 
@@ -371,9 +371,9 @@ func (c *Config) String() string {
 	if c == nil {
 		return ""
 	}
-	buf := bufPool.Get().([]byte)[:0]
-	buf = c.append(buf)
-	str := string(buf)
+	buf := bufPool.Get().(*[]byte)
+	*buf = c.append((*buf)[:0])
+	str := string(*buf)
 	bufPool.Put(buf)
 	return str
 }
@@ -385,6 +385,7 @@ func (c *Config) append(buf []byte) []byte {
 		return buf
 	}
 
+	l := len(buf)
 	if c.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
@@ -499,7 +500,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 
-	if len(buf) != 0 {
+	if len(buf) != l {
 		buf = buf[:len(buf)-1]
 	}
 	return buf
@@ -543,9 +544,10 @@ func (img *Image) Sign() string {
 }
 
 func (img *Image) pathAndSign() (string, string) {
-	buf := bufPool.Get().([]byte)[:0]
+	pbuf := bufPool.Get().(*[]byte)
+	buf := (*pbuf)[:0]
 	buf = append(buf, "/c/"...)
-	buf = append(buf, img.Config.String()...)
+	buf = img.Config.append(buf)
 	if len(buf) == len("/c/") {
 		buf = buf[:0]
 	}
@@ -554,20 +556,29 @@ func (img *Image) pathAndSign() (string, string) {
 	}
 	buf = append(buf, img.Path...)
 	path := string(buf)
-	bufPool.Put(buf)
 
 	if img.Proxy.Secret == "" {
+		*pbuf = buf
+		bufPool.Put(pbuf)
 		return path, ""
 	}
 
 	mac := hmac.New(sha256.New, []byte(img.Proxy.Secret))
-	io.WriteString(mac, path)
+	mac.Write(buf)
+	buf = mac.Sum(buf[:0])
+	buf2 := make([]byte, len("1.")+base64.URLEncoding.EncodedLen(len(buf)))
+	buf2[0] = '1'
+	buf2[1] = '.'
+	base64.URLEncoding.Encode(buf2[2:], buf)
 
-	return path, "1." + base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	*pbuf = buf
+	bufPool.Put(pbuf)
+	return path, string(buf2[:])
 }
 
 func (img *Image) String() string {
-	buf := bufPool.Get().([]byte)[:0]
+	pbuf := bufPool.Get().(*[]byte)
+	buf := (*pbuf)[:0]
 
 	buf = append(buf, "https://"...)
 	buf = append(buf, img.Proxy.Host...)
@@ -578,7 +589,8 @@ func (img *Image) String() string {
 	}
 	buf = append(buf, img.Path...)
 	str := string(buf)
-	bufPool.Put(buf)
+	*pbuf = buf
+	bufPool.Put(pbuf)
 	return str
 }
 
@@ -590,6 +602,7 @@ func (o Overlay) append(buf []byte) []byte {
 	var zr image.Rectangle
 	var zp image.Point
 
+	l := len(buf)
 	if o.Width != 0 {
 		buf = append(buf, 'w', '=')
 		buf = strconv.AppendInt(buf, int64(o.Width), 10)
@@ -686,7 +699,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 
-	if len(buf) > 0 && buf[len(buf)-1] == ',' {
+	if len(buf) > l && buf[len(buf)-1] == ',' {
 		buf = buf[:len(buf)-1]
 	}
 	buf = append(buf, "%2f"...)
