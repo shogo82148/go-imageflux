@@ -120,7 +120,7 @@ type Overlay struct {
 	// OffsetMax is the denominators of OffsetRatio.
 	OffsetMax image.Point
 
-	// OverlayOrigin is the postion of the overlay image origin.
+	// OverlayOrigin is the position of the overlay image origin.
 	OverlayOrigin Origin
 }
 
