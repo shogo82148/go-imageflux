@@ -101,18 +101,69 @@ func TestConfig(t *testing.T) {
 			},
 			output: "a=0",
 		},
+
+		// clipping parameters
 		{
 			config: &Config{
-				Clip: image.Rect(100, 150, 200, 250),
+				InputClip: image.Rect(100, 150, 200, 250),
 			},
-			output: "c=100:150:200:250",
+			output: "ic=100:150:200:250",
 		},
 		{
 			config: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use Clip instead of OutputClip.
+				Clip: image.Rect(100, 150, 200, 250),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// If you specify both Clip and OutputClip,
+				// OutputClip is used.
+				OutputClip: image.Rect(100, 150, 200, 250),
+				Clip:       image.Rect(200, 250, 300, 350),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+			output: "icr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use ClipRatio instead of OutputClipRatio.
 				ClipRatio: image.Rect(25, 25, 75, 75),
 				ClipMax:   image.Pt(100, 100),
 			},
-			output: "cr=0.25:0.25:0.75:0.75",
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				// If you specify both ClipRatio and OutputClipRatio,
+				// OutputClipRatio is used.
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipRatio:       image.Rect(35, 35, 85, 85),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
 		},
 		{
 			config: &Config{
