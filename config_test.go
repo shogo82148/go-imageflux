@@ -101,11 +101,36 @@ func TestConfig(t *testing.T) {
 			},
 			output: "a=0",
 		},
+
+		// clipping parameters
 		{
 			config: &Config{
+				InputClip: image.Rect(100, 150, 200, 250),
+			},
+			output: "ic=100:150:200:250",
+		},
+		{
+			config: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use Clip instead of OutputClip.
 				Clip: image.Rect(100, 150, 200, 250),
 			},
-			output: "c=100:150:200:250",
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// If you specify both Clip and OutputClip,
+				// OutputClip is used.
+				OutputClip: image.Rect(100, 150, 200, 250),
+				Clip:       image.Rect(200, 250, 300, 350),
+			},
+			output: "oc=100:150:200:250",
 		},
 		{
 			config: &Config{
