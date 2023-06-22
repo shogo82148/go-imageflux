@@ -3,6 +3,7 @@ package imageflux
 import (
 	"image"
 	"image/color"
+	"reflect"
 	"testing"
 )
 
@@ -295,6 +296,34 @@ func TestConfig(t *testing.T) {
 	for _, c := range cases {
 		if got := c.config.String(); got != c.output {
 			t.Errorf("%#v: want %s, got %s", c.config, c.output, got)
+		}
+	}
+}
+
+func TestParseConfig(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *Config
+		rest  string
+	}{
+		{
+			input: "",
+			want:  &Config{},
+			rest:  "",
+		},
+	}
+
+	for _, c := range cases {
+		got, rest, err := ParseConfig(c.input)
+		if err != nil {
+			t.Errorf("%q: unexpected error: %s", c.input, err)
+			continue
+		}
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%q: want %#v, got %#v", c.input, c.want, got)
+		}
+		if rest != c.rest {
+			t.Errorf("%q: want %q, got %q", c.input, c.rest, rest)
 		}
 	}
 }

@@ -618,3 +618,96 @@ func (o Overlay) append(buf []byte) []byte {
 	buf = append(buf, url.QueryEscape(o.URL)...)
 	return buf
 }
+
+func ParseConfig(s string) (config *Config, rest string, err error) {
+	state := parseState{
+		s:      s,
+		config: &Config{},
+	}
+	for {
+		key := state.getKey()
+		if key == "" {
+			break
+		}
+		if !state.skipEqual() {
+			return nil, "", fmt.Errorf("imageflux: missing '=' after key %q", key)
+		}
+		value := state.getValue()
+		state.skipComma()
+		if err := state.setValue(key, value); err != nil {
+			return nil, "", err
+		}
+	}
+	return state.config, state.rest(), nil
+}
+
+type parseState struct {
+	s      string
+	idx    int
+	config *Config
+}
+
+func (s *parseState) setValue(key, value string) error {
+	switch key {
+	}
+	return nil
+}
+
+// getKey returns the key at the current index and advances the index.
+func (s *parseState) getKey() string {
+	i := s.idx
+	for i < len(s.s) {
+		if s.s[i] == '=' || s.s[i] == '/' {
+			break
+		}
+		i++
+	}
+	key := s.s[s.idx:i]
+	s.idx = i
+	return key
+}
+
+// skipEqual skips the '=' at the current index and returns true if it was found.
+func (s *parseState) skipEqual() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == '=' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+// getValue returns the value at the current index and advances the index.
+func (s *parseState) getValue() string {
+	var nest int
+	i := s.idx
+LOOP:
+	for i < len(s.s) {
+		switch s.s[i] {
+		case '(':
+			nest++
+		case ')':
+			nest--
+		case ',', '/':
+			if nest == 0 {
+				break LOOP
+			}
+		}
+		i++
+	}
+	value := s.s[s.idx:i]
+	s.idx = i
+	return value
+}
+
+// skipComma skips the ',' at the current index and returns true if it was found.
+func (s *parseState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+func (s *parseState) rest() string {
+	return s.s[s.idx:]
+}
