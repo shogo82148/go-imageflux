@@ -160,6 +160,8 @@ const (
 	// AspectModePad holds the the aspect ratio of the input image,
 	// and fills the unfilled portion with the specified background color.
 	AspectModePad
+
+	aspectModeMax
 )
 
 // Origin is the origin.
@@ -649,6 +651,43 @@ type parseState struct {
 
 func (s *parseState) setValue(key, value string) error {
 	switch key {
+	// width
+	case "w":
+		w, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid width %q", value)
+		}
+		s.config.Width = w
+
+	// height
+	case "h":
+		h, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid height %q", value)
+		}
+		s.config.Height = h
+
+	// resize mode
+	case "u":
+		switch value {
+		case "0":
+			s.config.DisableEnlarge = true
+		case "1":
+			s.config.DisableEnlarge = false
+		default:
+			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
+		}
+
+	// aspect mode
+	case "a":
+		a, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
+		}
+		if a < 0 || AspectMode(a+1) >= aspectModeMax {
+			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
+		}
+		s.config.AspectMode = AspectMode(a + 1)
 	}
 	return nil
 }

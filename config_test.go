@@ -309,7 +309,25 @@ func TestParseConfig(t *testing.T) {
 		{
 			input: "",
 			want:  &Config{},
-			rest:  "",
+		},
+		{
+			input: "w=100",
+			want: &Config{
+				Width: 100,
+			},
+		},
+		{
+			input: "w=100,h=200",
+			want: &Config{
+				Width:  100,
+				Height: 200,
+			},
+		},
+		{
+			input: "a=3",
+			want: &Config{
+				AspectMode: AspectModePad,
+			},
 		},
 	}
 
