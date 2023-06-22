@@ -30,20 +30,25 @@ type Config struct {
 	// This is used for the output image.
 	OutputClip image.Rectangle
 
-	// Clip is alias of OutputClip.
+	// Clip is an alias of OutputClip.
 	// If both Clip and OutputClip are set, OutputClip is used.
 	//
 	// Deprecated: Use OutputClip instead.
 	Clip image.Rectangle
 
 	// InputClipRatio is a position in ratio of clipping area.
-	// The coordinates of the rectangle are divided by InputClipMax.X or InputClipMax.Y.
+	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
 	// This is used for the input image.
 	InputClipRatio image.Rectangle
 
-	// ClipRatio is a position in ratio of clipping area.
+	// OutputClipRatio is a position in ratio of clipping area.
 	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
-	// This is used for the output image.
+	OutputClipRatio image.Rectangle
+
+	// ClipRatio is an alias of OutputClipRatio.
+	// If both ClipRatio and OutputClipRatio are set, OutputClipRatio is used.
+	//
+	// Deprecated: Use OutputClipRatio instead.
 	ClipRatio image.Rectangle
 
 	// ClipMax is the denominators of ClipRatio.
@@ -427,20 +432,41 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(oc.Max.Y), 10)
 		buf = append(buf, ',')
 	}
-	if c.ClipRatio != zr && c.ClipMax != zp {
-		x1 := float64(c.ClipRatio.Min.X) / float64(c.ClipMax.X)
-		y1 := float64(c.ClipRatio.Min.Y) / float64(c.ClipMax.Y)
-		x2 := float64(c.ClipRatio.Max.X) / float64(c.ClipMax.X)
-		y2 := float64(c.ClipRatio.Max.Y) / float64(c.ClipMax.Y)
-		buf = append(buf, 'c', 'r', '=')
-		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
-		buf = append(buf, ':')
-		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
-		buf = append(buf, ':')
-		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
-		buf = append(buf, ':')
-		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = append(buf, ',')
+	if cm := c.ClipMax; cm != zp {
+		if ic := c.InputClipRatio; ic != zr {
+			x1 := float64(ic.Min.X) / float64(cm.X)
+			y1 := float64(ic.Min.Y) / float64(cm.Y)
+			x2 := float64(ic.Max.X) / float64(cm.X)
+			y2 := float64(ic.Max.Y) / float64(cm.Y)
+			buf = append(buf, 'i', 'c', 'r', '=')
+			buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
+			buf = append(buf, ',')
+
+		}
+		if c, oc := c.ClipRatio, c.OutputClipRatio; c != zr || oc != zr {
+			if oc == zr {
+				oc = c
+			}
+			x1 := float64(oc.Min.X) / float64(cm.X)
+			y1 := float64(oc.Min.Y) / float64(cm.Y)
+			x2 := float64(oc.Max.X) / float64(cm.X)
+			y2 := float64(oc.Max.Y) / float64(cm.Y)
+			buf = append(buf, 'o', 'c', 'r', '=')
+			buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
+			buf = append(buf, ':')
+			buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
+			buf = append(buf, ',')
+		}
 	}
 	if c.Origin != OriginDefault {
 		buf = append(buf, 'g', '=')

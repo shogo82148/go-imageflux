@@ -134,10 +134,36 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+			output: "icr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use ClipRatio instead of OutputClipRatio.
 				ClipRatio: image.Rect(25, 25, 75, 75),
 				ClipMax:   image.Pt(100, 100),
 			},
-			output: "cr=0.25:0.25:0.75:0.75",
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				// If you specify both ClipRatio and OutputClipRatio,
+				// OutputClipRatio is used.
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipRatio:       image.Rect(35, 35, 85, 85),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
 		},
 		{
 			config: &Config{
