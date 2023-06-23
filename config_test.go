@@ -404,6 +404,12 @@ func TestConfig(t *testing.T) {
 			},
 			output: "lossless=1",
 		},
+		{
+			config: &Config{
+				ExifOption: ExifOptionKeepOrientation,
+			},
+			output: "s=2",
+		},
 
 		// image filters
 		{

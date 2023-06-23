@@ -93,6 +93,7 @@ type Config struct {
 	Format Format
 
 	// Quality is quality of the output image.
+	// It is used when the output format is JPEG or WebP.
 	Quality int
 
 	// DisableOptimization disables optimization of the Huffman coding table
@@ -101,6 +102,9 @@ type Config struct {
 
 	// Lossless enables lossless compression when the output format is WebP.
 	Lossless bool
+
+	// ExifOption specifies the Exif information to be included in the output image.
+	ExifOption ExifOption
 
 	// Unsharp configures unsharp mask.
 	Unsharp Unsharp
@@ -496,6 +500,21 @@ const (
 	PaddingModeLeave PaddingMode = 1
 )
 
+// ExifOption specifies the Exif information to be included in the output image.
+type ExifOption int
+
+const (
+	// ExifOptionDefault is the default value of ExifOption.
+	ExifOptionDefault ExifOption = 0
+
+	// ExifOptionStrip removes all Exif information from the output image.
+	ExifOptionStrip ExifOption = 1
+
+	// ExifOptionKeepOrientation removes all Exif information
+	// except Orientation from the output image.
+	ExifOptionKeepOrientation ExifOption = 2
+)
+
 func (c *Config) String() string {
 	if c == nil {
 		return ""
@@ -683,6 +702,11 @@ func (c *Config) append(buf []byte) []byte {
 	}
 	if c.Lossless {
 		buf = append(buf, "lossless=1,"...)
+	}
+	if c.ExifOption != ExifOptionDefault {
+		buf = append(buf, "s="...)
+		buf = strconv.AppendInt(buf, int64(c.ExifOption), 10)
+		buf = append(buf, ',')
 	}
 
 	// image filters
