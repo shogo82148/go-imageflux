@@ -9,17 +9,20 @@ import (
 
 func BenchmarkConfig(b *testing.B) {
 	config := &Config{
-		Width:          100,
-		Height:         100,
-		DisableEnlarge: true,
-		AspectMode:     AspectModePad,
-		Clip:           image.Rect(0, 0, 100, 100),
-		ClipRatio:      image.Rect(0, 0, 100, 100),
-		ClipMax:        image.Pt(100, 100),
-		Origin:         OriginBottomRight,
-		Background:     color.Black,
-		Rotate:         RotateLeftBottom,
-		Through:        ThroughJPEG | ThroughPNG | ThroughGIF,
+		Width:           100,
+		Height:          100,
+		DisableEnlarge:  true,
+		AspectMode:      AspectModePad,
+		InputClip:       image.Rect(0, 0, 100, 100),
+		InputClipRatio:  image.Rect(0, 0, 100, 100),
+		OutputClip:      image.Rect(0, 0, 100, 100),
+		OutputClipRatio: image.Rect(0, 0, 100, 100),
+		ClipMax:         image.Pt(100, 100),
+		Origin:          OriginBottomRight,
+		Background:      color.Black,
+		InputRotate:     RotateLeftBottom,
+		OutputRotate:    RotateLeftBottom,
+		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 		Overlays: []Overlay{
 			{
 				URL:            "http://example.com/",
@@ -32,7 +35,6 @@ func BenchmarkConfig(b *testing.B) {
 				ClipMax:        image.Pt(100, 100),
 				Origin:         OriginBottomRight,
 				Background:     color.Black,
-				Rotate:         RotateLeftBottom,
 				Offset:         image.Pt(100, 100),
 				OffsetRatio:    image.Pt(100, 100),
 				OffsetMax:      image.Pt(100, 100),
@@ -104,17 +106,89 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Clip: image.Rect(100, 150, 200, 250),
+				DevicePixelRatio: 5,
 			},
-			output: "c=100:150:200:250",
+			output: "dpr=5",
+		},
+
+		// clipping parameters
+		{
+			config: &Config{
+				InputClip: image.Rect(100, 150, 200, 250),
+			},
+			output: "ic=100:150:200:250",
 		},
 		{
 			config: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+			output: "icr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				InputClip:   image.Rect(100, 150, 200, 250),
+				InputOrigin: OriginMiddleCenter,
+			},
+			output: "ic=100:150:200:250,ig=5",
+		},
+		{
+			config: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use Clip instead of OutputClip.
+				Clip: image.Rect(100, 150, 200, 250),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				// If you specify both Clip and OutputClip,
+				// OutputClip is used.
+				OutputClip: image.Rect(100, 150, 200, 250),
+				Clip:       image.Rect(200, 250, 300, 350),
+			},
+			output: "oc=100:150:200:250",
+		},
+		{
+			config: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use ClipRatio instead of OutputClipRatio.
 				ClipRatio: image.Rect(25, 25, 75, 75),
 				ClipMax:   image.Pt(100, 100),
 			},
-			output: "cr=0.25:0.25:0.75:0.75",
+			output: "ocr=0.25:0.25:0.75:0.75",
 		},
+		{
+			config: &Config{
+				// If you specify both ClipRatio and OutputClipRatio,
+				// OutputClipRatio is used.
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipRatio:       image.Rect(35, 35, 85, 85),
+				ClipMax:         image.Pt(100, 100),
+			},
+			output: "ocr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				OutputClip:   image.Rect(100, 150, 200, 250),
+				OutputOrigin: OriginMiddleCenter,
+			},
+			output: "oc=100:150:200:250,og=5",
+		},
+
 		{
 			config: &Config{
 				Origin: OriginTopLeft,
@@ -163,18 +237,58 @@ func TestConfig(t *testing.T) {
 			},
 			output: "b=00000080",
 		},
+
+		// rotation
 		{
 			config: &Config{
+				InputRotate: RotateLeftBottom,
+			},
+			output: "ir=8",
+		},
+		{
+			config: &Config{
+				InputRotate: RotateAuto,
+			},
+			output: "ir=auto",
+		},
+		{
+			config: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+			output: "or=8",
+		},
+		{
+			config: &Config{
+				OutputRotate: RotateAuto,
+			},
+			output: "or=auto",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use Rotate instead of OutputRotate.
 				Rotate: RotateLeftBottom,
 			},
-			output: "r=8",
+			output: "or=8",
 		},
 		{
 			config: &Config{
+				// for backward compatibility,
+				// you can use Rotate instead of OutputRotate.
 				Rotate: RotateAuto,
 			},
-			output: "r=auto",
+			output: "or=auto",
 		},
+		{
+			config: &Config{
+				// If you specify both Rotate and OutputRotate,
+				// OutputRotate is used.
+				OutputRotate: RotateAuto,
+				Rotate:       RotateLeftBottom,
+			},
+			output: "or=auto",
+		},
+
 		{
 			config: &Config{
 				Through: ThroughJPEG,
@@ -193,57 +307,80 @@ func TestConfig(t *testing.T) {
 			},
 			output: "through=jpg:png:gif",
 		},
+
+		// overlays
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL: "http://example.com/",
+					URL: "images/1.png",
 				}},
 			},
-			output: "l=(%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:    "http://example.com/",
+					URL:    "images/1.png",
 					Offset: image.Pt(100, 200),
 				}},
 			},
-			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(x=100,y=200%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:         "http://example.com/",
+					URL:         "images/1.png",
 					OffsetRatio: image.Pt(25, 75),
 					OffsetMax:   image.Pt(100, 100),
 				}},
 			},
-			output: "l=(xr=0.25,yr=0.75%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(xr=0.25,yr=0.75%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:           "http://example.com/",
+					URL:           "images/1.png",
 					OverlayOrigin: OriginTopLeft,
 				}},
 			},
-			output: "l=(lg=1%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(lg=1%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{
 					{
-						URL:    "http://example.com/1.png",
+						URL:    "images/1.png",
 						Offset: image.Pt(100, 200),
 					},
 					{
-						URL:    "http://example.com/2.png",
+						URL:    "images/2.png",
 						Offset: image.Pt(200, 100),
 					},
 				},
 			},
-			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F1.png),l=(x=200,y=100%2fhttp%3A%2F%2Fexample.com%2F2.png)",
+			output: "l=(x=100,y=200%2Fimages%2F1.png),l=(x=200,y=100%2Fimages%2F2.png)",
 		},
+		{
+			config: &Config{
+				Overlays: []Overlay{{
+					URL:      "images/1.png",
+					MaskType: MaskTypeWhite,
+				}},
+			},
+			output: "l=(mask=white%2Fimages%2F1.png)",
+		},
+		{
+			config: &Config{
+				Overlays: []Overlay{{
+					URL:         "images/1.png",
+					MaskType:    MaskTypeAlpha,
+					PaddingMode: PaddingModeLeave,
+				}},
+			},
+			output: "l=(mask=alpha:1%2Fimages%2F1.png)",
+		},
+
+		// output format
 		{
 			config: &Config{
 				Format: FormatWebPFromPNG,
@@ -262,6 +399,20 @@ func TestConfig(t *testing.T) {
 			},
 			output: "o=0",
 		},
+		{
+			config: &Config{
+				Lossless: true,
+			},
+			output: "lossless=1",
+		},
+		{
+			config: &Config{
+				ExifOption: ExifOptionKeepOrientation,
+			},
+			output: "s=2",
+		},
+
+		// image filters
 		{
 			config: &Config{
 				Unsharp: Unsharp{
@@ -291,11 +442,41 @@ func TestConfig(t *testing.T) {
 			},
 			output: "blur=10x1",
 		},
+		{
+			config: &Config{
+				GrayScale: 100,
+			},
+			output: "grayscale=100",
+		},
+		{
+			config: &Config{
+				Sepia: 100,
+			},
+			output: "sepia=100",
+		},
+		{
+			config: &Config{
+				Brightness: 100,
+			},
+			output: "brightness=200",
+		},
+		{
+			config: &Config{
+				Contrast: 100,
+			},
+			output: "contrast=200",
+		},
+		{
+			config: &Config{
+				Invert: true,
+			},
+			output: "invert=1",
+		},
 	}
 
 	for _, c := range cases {
 		if got := c.config.String(); got != c.output {
-			t.Errorf("%#v: want %s, got %s", c.config, c.output, got)
+			t.Errorf("%#v: want %q, got %q", c.config, c.output, got)
 		}
 	}
 }
