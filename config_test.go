@@ -117,6 +117,20 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+			output: "icr=0.25:0.25:0.75:0.75",
+		},
+		{
+			config: &Config{
+				InputClip:   image.Rect(100, 150, 200, 250),
+				InputOrigin: OriginMiddleCenter,
+			},
+			output: "ic=100:150:200:250,ig=5",
+		},
+		{
+			config: &Config{
 				OutputClip: image.Rect(100, 150, 200, 250),
 			},
 			output: "oc=100:150:200:250",
@@ -137,13 +151,6 @@ func TestConfig(t *testing.T) {
 				Clip:       image.Rect(200, 250, 300, 350),
 			},
 			output: "oc=100:150:200:250",
-		},
-		{
-			config: &Config{
-				InputClipRatio: image.Rect(25, 25, 75, 75),
-				ClipMax:        image.Pt(100, 100),
-			},
-			output: "icr=0.25:0.25:0.75:0.75",
 		},
 		{
 			config: &Config{
