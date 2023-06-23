@@ -351,21 +351,42 @@ const (
 	// FormatAuto encodes the image by the same format with the input image.
 	FormatAuto Format = "auto"
 
-	// FormatJPEG encodes the image as a JPEG.
+	// FormatJPEG encodes the image as JPEG.
 	FormatJPEG Format = "jpg"
 
-	// FormatPNG encodes the image as a PNG.
+	// FormatPNG encodes the image as PNG.
 	FormatPNG Format = "png"
 
-	// FormatGIF encodes the image as a GIF.
+	// FormatGIF encodes the image as GIF.
 	FormatGIF Format = "gif"
 
+	// FormatWebP encodes the image as WebP.
+	FormatWebP Format = "webp"
+
+	// FormatWebPAuto encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as the same format with the input image.
+	FormatWebPAuto Format = "webp:auto"
+
+	// FormatWebPJPEG encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as JPEG.
+	FormatWebPJPEG Format = "webp:jpg"
+
+	// FormatWebPPNG encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as PNG.
+	FormatWebPPNG Format = "webp:png"
+
+	// FormatWebPGIF encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as GIF.
+	FormatWebPGIF Format = "webp:gif"
+
 	// FormatWebPFromJPEG encodes the image as a WebP.
-	// The input image should be a JPEG.
+	//
+	// Deprecated: use FormatWebPJPEG instead.
 	FormatWebPFromJPEG Format = "webp:jpeg"
 
 	// FormatWebPFromPNG encodes the image as a WebP.
-	// The input image should be a PNG.
+	//
+	// Deprecated: use FormatWebPPNG instead.
 	FormatWebPFromPNG Format = "webp:png"
 )
 
