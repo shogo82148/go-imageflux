@@ -180,6 +180,14 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				OutputClip:   image.Rect(100, 150, 200, 250),
+				OutputOrigin: OriginMiddleCenter,
+			},
+			output: "oc=100:150:200:250,og=5",
+		},
+
+		{
+			config: &Config{
 				Origin: OriginTopLeft,
 			},
 			output: "g=1",
