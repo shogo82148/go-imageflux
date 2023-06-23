@@ -101,6 +101,12 @@ func TestConfig(t *testing.T) {
 			},
 			output: "a=0",
 		},
+		{
+			config: &Config{
+				DevicePixelRatio: 5,
+			},
+			output: "dpr=5",
+		},
 
 		// clipping parameters
 		{
