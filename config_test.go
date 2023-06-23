@@ -510,6 +510,12 @@ func TestParseConfig(t *testing.T) {
 				AspectMode: AspectModePad,
 			},
 		},
+		{
+			input: "dpr=5",
+			want: &Config{
+				DevicePixelRatio: 5,
+			},
+		},
 	}
 
 	for _, c := range cases {

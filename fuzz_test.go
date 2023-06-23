@@ -10,6 +10,7 @@ import (
 
 func FuzzParseConfig(f *testing.F) {
 	f.Add("w=100")
+	f.Add("dpr=5")
 	f.Fuzz(func(t *testing.T, s string) {
 		c0, rest, err := ParseConfig(s)
 		if err != nil {

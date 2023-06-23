@@ -1005,7 +1005,7 @@ type parseState struct {
 
 func (s *parseState) setValue(key, value string) error {
 	switch key {
-	// width
+	// Width
 	case "w":
 		w, err := strconv.Atoi(value)
 		if err != nil {
@@ -1013,7 +1013,7 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		s.config.Width = w
 
-	// height
+	// Height
 	case "h":
 		h, err := strconv.Atoi(value)
 		if err != nil {
@@ -1021,7 +1021,7 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		s.config.Height = h
 
-	// resize mode
+	// DisableEnlarge
 	case "u":
 		switch value {
 		case "0":
@@ -1032,7 +1032,7 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
 		}
 
-	// aspect mode
+	// AspectMode
 	case "a":
 		a, err := strconv.Atoi(value)
 		if err != nil {
@@ -1042,6 +1042,14 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
 		}
 		s.config.AspectMode = AspectMode(a + 1)
+
+	// DevicePixelRatio
+	case "dpr":
+		dpr, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid device pixel ratio %q", value)
+		}
+		s.config.DevicePixelRatio = dpr
 	}
 	return nil
 }
