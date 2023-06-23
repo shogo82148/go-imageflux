@@ -229,13 +229,13 @@ func TestConfig(t *testing.T) {
 			config: &Config{
 				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 0},
 			},
-			output: "b=000000",
+			output: "b=ffffff00",
 		},
 		{
 			config: &Config{
-				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 128},
+				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 128},
 			},
-			output: "b=00000080",
+			output: "b=ffffff80",
 		},
 
 		// rotation
@@ -571,6 +571,66 @@ func TestParseConfig(t *testing.T) {
 			want: &Config{
 				OutputClip:   image.Rect(100, 150, 200, 250),
 				OutputOrigin: OriginMiddleCenter,
+			},
+		},
+
+		{
+			input: "g=1",
+			want: &Config{
+				Origin: OriginTopLeft,
+			},
+		},
+		{
+			input: "b=000000",
+			want: &Config{
+				Background: color.NRGBA{
+					R: 0,
+					G: 0,
+					B: 0,
+					A: 0xff,
+				},
+			},
+		},
+		{
+			input: "b=ffffff",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=FFFFFF",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=ff0000",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0, B: 0, A: 0xff},
+			},
+		},
+		{
+			input: "b=00ff00",
+			want: &Config{
+				Background: color.NRGBA{R: 0, G: 0xff, B: 0, A: 0xff},
+			},
+		},
+		{
+			input: "b=0000ff",
+			want: &Config{
+				Background: color.NRGBA{R: 0, G: 0, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=ffffff00",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00},
+			},
+		},
+		{
+			input: "b=ffffff80",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x80},
 			},
 		},
 	}

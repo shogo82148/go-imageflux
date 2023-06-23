@@ -658,23 +658,26 @@ func (c *Config) append(buf []byte) []byte {
 	}
 
 	if c.Origin != OriginDefault {
-		buf = append(buf, 'g', '=')
+		buf = append(buf, "g="...)
 		buf = strconv.AppendInt(buf, int64(c.Origin), 10)
 		buf = append(buf, ',')
 	}
 	if c.Background != nil {
-		r, g, b, a := c.Background.RGBA()
-		if a == 0xffff {
-			buf = append(buf, 'b', '=')
-			buf = appendByte(buf, byte(r>>8))
-			buf = appendByte(buf, byte(g>>8))
-			buf = appendByte(buf, byte(b>>8))
+		b := color.NRGBAModel.Convert(c.Background).(color.NRGBA)
+		if b.A == 0xff {
+			// opaque background
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
 			buf = append(buf, ',')
-		} else if a == 0 {
-			buf = append(buf, "b=000000,"...)
 		} else {
-			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
-			buf = append(buf, c...)
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
+			buf = appendByte(buf, b.A)
+			buf = append(buf, ',')
 		}
 	}
 
@@ -1049,7 +1052,7 @@ func (s *parseState) setValue(key, value string) error {
 	// DevicePixelRatio
 	case "dpr":
 		dpr, err := strconv.ParseFloat(value, 64)
-		if err != nil {
+		if err != nil || dpr <= 0 || math.IsNaN(dpr) {
 			return fmt.Errorf("imageflux: invalid device pixel ratio %q", value)
 		}
 		s.config.DevicePixelRatio = dpr
@@ -1141,6 +1144,42 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid output origin %q", value)
 		}
 		s.config.OutputOrigin = Origin(og)
+
+	// Origin
+	case "g":
+		g, err := strconv.Atoi(value)
+		if err != nil || g < 0 || Origin(g) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		}
+		s.config.Origin = Origin(g)
+
+	// Background
+	case "b":
+		if len(value) == 6 {
+			rgb, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.config.Background = color.NRGBA{
+				R: uint8(rgb >> 16),
+				G: uint8(rgb >> 8),
+				B: uint8(rgb),
+				A: 0xff,
+			}
+		} else if len(value) == 8 {
+			rgba, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.config.Background = color.NRGBA{
+				R: uint8(rgba >> 24),
+				G: uint8(rgba >> 16),
+				B: uint8(rgba >> 8),
+				A: uint8(rgba),
+			}
+		} else {
+			return fmt.Errorf("imageflux: invalid background %q", value)
+		}
 	}
 	return nil
 }
