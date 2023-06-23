@@ -389,7 +389,7 @@ func TestConfig(t *testing.T) {
 		// output format
 		{
 			config: &Config{
-				Format: FormatWebPFromPNG,
+				Format: FormatWebPPNG,
 			},
 			output: "f=webp:png",
 		},
@@ -589,12 +589,7 @@ func TestParseConfig(t *testing.T) {
 		{
 			input: "b=000000",
 			want: &Config{
-				Background: color.NRGBA{
-					R: 0,
-					G: 0,
-					B: 0,
-					A: 0xff,
-				},
+				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 0xff},
 			},
 		},
 		{
@@ -679,6 +674,13 @@ func TestParseConfig(t *testing.T) {
 			input: "r=auto",
 			want: &Config{
 				OutputRotate: RotateAuto,
+			},
+		},
+
+		{
+			input: "f=webp:png",
+			want: &Config{
+				Format: FormatWebPPNG,
 			},
 		},
 	}

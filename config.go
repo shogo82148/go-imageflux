@@ -1215,6 +1215,13 @@ func (s *parseState) setValue(key, value string) error {
 			}
 			s.config.OutputRotate = Rotate(ir)
 		}
+
+	// TODO: Through
+	// TODO: Overlays
+
+	// Format
+	case "f":
+		s.config.Format = Format(value)
 	}
 	return nil
 }
