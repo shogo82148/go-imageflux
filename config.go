@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
 )
+
+const rectangleScale = 100
 
 // Config is configure of image.
 type Config struct {
@@ -1051,18 +1054,39 @@ func (s *parseState) setValue(key, value string) error {
 
 	// InputClip
 	case "ic":
-		a, b, c, d, ok := split4(value)
+		v0, v1, v2, v3, ok := split4(value)
 		if !ok {
 			return fmt.Errorf("imageflux: invalid input clip %q", value)
 		}
-		minX, err0 := strconv.Atoi(a)
-		minY, err1 := strconv.Atoi(b)
-		maxX, err2 := strconv.Atoi(c)
-		maxY, err3 := strconv.Atoi(d)
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
 		if err0 != nil || err1 != nil || err2 != nil || err3 != nil {
 			return fmt.Errorf("imageflux: invalid input clip %q", value)
 		}
 		s.config.InputClip = image.Rect(minX, minY, maxX, maxY)
+
+	// InputClipRatio
+	case "icr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		s.config.InputClipRatio = image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
 	}
 	return nil
 }

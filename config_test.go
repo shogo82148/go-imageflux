@@ -524,6 +524,13 @@ func TestParseConfig(t *testing.T) {
 				InputClip: image.Rect(100, 150, 200, 250),
 			},
 		},
+		{
+			input: "icr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+		},
 	}
 
 	for _, c := range cases {
