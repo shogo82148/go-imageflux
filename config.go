@@ -541,12 +541,16 @@ const (
 	// ExifOptionDefault is the default value of ExifOption.
 	ExifOptionDefault ExifOption = 0
 
+	exifOptionMin ExifOption = 1
+
 	// ExifOptionStrip removes all Exif information from the output image.
 	ExifOptionStrip ExifOption = 1
 
 	// ExifOptionKeepOrientation removes all Exif information
 	// except Orientation from the output image.
 	ExifOptionKeepOrientation ExifOption = 2
+
+	exifOptionMax ExifOption = 3
 )
 
 func (c *Config) String() string {
@@ -1222,6 +1226,44 @@ func (s *parseState) setValue(key, value string) error {
 	// Format
 	case "f":
 		s.config.Format = Format(value)
+
+	// Quality
+	case "q":
+		q, err := strconv.Atoi(value)
+		if err != nil || q < 0 || q > 100 {
+			return fmt.Errorf("imageflux: invalid quality %q", value)
+		}
+		s.config.Quality = q
+
+	// DisableOptimization
+	case "o":
+		switch value {
+		case "0":
+			s.config.DisableOptimization = true
+		case "1":
+			s.config.DisableOptimization = false
+		default:
+			return fmt.Errorf("imageflux: invalid optimization %q", value)
+		}
+
+	// Lossless
+	case "lossless":
+		switch value {
+		case "0":
+			s.config.Lossless = false
+		case "1":
+			s.config.Lossless = true
+		default:
+			return fmt.Errorf("imageflux: invalid lossless %q", value)
+		}
+
+	// ExifOption
+	case "s":
+		v, err := strconv.Atoi(value)
+		if err != nil || ExifOption(v) < exifOptionMin || ExifOption(v) >= exifOptionMax {
+			return fmt.Errorf("imageflux: invalid exif option %q", value)
+		}
+		s.config.ExifOption = ExifOption(v)
 	}
 	return nil
 }

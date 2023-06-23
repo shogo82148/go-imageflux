@@ -683,6 +683,18 @@ func TestParseConfig(t *testing.T) {
 				Format: FormatWebPPNG,
 			},
 		},
+		{
+			input: "o=0",
+			want: &Config{
+				DisableOptimization: true,
+			},
+		},
+		{
+			input: "lossless=1",
+			want: &Config{
+				Lossless: true,
+			},
+		},
 	}
 
 	for _, c := range cases {
