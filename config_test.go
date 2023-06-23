@@ -8,17 +8,20 @@ import (
 
 func BenchmarkConfig(b *testing.B) {
 	config := &Config{
-		Width:          100,
-		Height:         100,
-		DisableEnlarge: true,
-		AspectMode:     AspectModePad,
-		Clip:           image.Rect(0, 0, 100, 100),
-		ClipRatio:      image.Rect(0, 0, 100, 100),
-		ClipMax:        image.Pt(100, 100),
-		Origin:         OriginBottomRight,
-		Background:     color.Black,
-		Rotate:         RotateLeftBottom,
-		Through:        ThroughJPEG | ThroughPNG | ThroughGIF,
+		Width:           100,
+		Height:          100,
+		DisableEnlarge:  true,
+		AspectMode:      AspectModePad,
+		InputClip:       image.Rect(0, 0, 100, 100),
+		InputClipRatio:  image.Rect(0, 0, 100, 100),
+		OutputClip:      image.Rect(0, 0, 100, 100),
+		OutputClipRatio: image.Rect(0, 0, 100, 100),
+		ClipMax:         image.Pt(100, 100),
+		Origin:          OriginBottomRight,
+		Background:      color.Black,
+		InputRotate:     RotateLeftBottom,
+		OutputRotate:    RotateLeftBottom,
+		Through:         ThroughJPEG | ThroughPNG | ThroughGIF,
 		Overlays: []Overlay{
 			{
 				URL:            "http://example.com/",
@@ -31,7 +34,6 @@ func BenchmarkConfig(b *testing.B) {
 				ClipMax:        image.Pt(100, 100),
 				Origin:         OriginBottomRight,
 				Background:     color.Black,
-				Rotate:         RotateLeftBottom,
 				Offset:         image.Pt(100, 100),
 				OffsetRatio:    image.Pt(100, 100),
 				OffsetMax:      image.Pt(100, 100),
@@ -234,18 +236,58 @@ func TestConfig(t *testing.T) {
 			},
 			output: "b=00000080",
 		},
+
+		// rotation
 		{
 			config: &Config{
+				InputRotate: RotateLeftBottom,
+			},
+			output: "ir=8",
+		},
+		{
+			config: &Config{
+				InputRotate: RotateAuto,
+			},
+			output: "ir=auto",
+		},
+		{
+			config: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+			output: "or=8",
+		},
+		{
+			config: &Config{
+				OutputRotate: RotateAuto,
+			},
+			output: "or=auto",
+		},
+		{
+			config: &Config{
+				// for backward compatibility,
+				// you can use Rotate instead of OutputRotate.
 				Rotate: RotateLeftBottom,
 			},
-			output: "r=8",
+			output: "or=8",
 		},
 		{
 			config: &Config{
+				// for backward compatibility,
+				// you can use Rotate instead of OutputRotate.
 				Rotate: RotateAuto,
 			},
-			output: "r=auto",
+			output: "or=auto",
 		},
+		{
+			config: &Config{
+				// If you specify both Rotate and OutputRotate,
+				// OutputRotate is used.
+				OutputRotate: RotateAuto,
+				Rotate:       RotateLeftBottom,
+			},
+			output: "or=auto",
+		},
+
 		{
 			config: &Config{
 				Through: ThroughJPEG,
