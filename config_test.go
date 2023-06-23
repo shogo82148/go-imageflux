@@ -531,6 +531,13 @@ func TestParseConfig(t *testing.T) {
 				ClipMax:        image.Pt(100, 100),
 			},
 		},
+		{
+			input: "ic=100:150:200:250,ig=5",
+			want: &Config{
+				InputClip:   image.Rect(100, 150, 200, 250),
+				InputOrigin: OriginMiddleCenter,
+			},
+		},
 	}
 
 	for _, c := range cases {

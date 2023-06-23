@@ -294,34 +294,36 @@ type Origin int
 
 const (
 	// OriginDefault is default origin.
-	OriginDefault Origin = iota
+	OriginDefault Origin = 0
 
 	// OriginTopLeft is top-left
-	OriginTopLeft
+	OriginTopLeft Origin = 1
 
 	// OriginTopCenter is top-center
-	OriginTopCenter
+	OriginTopCenter Origin = 2
 
 	// OriginTopRight is top-right
-	OriginTopRight
+	OriginTopRight Origin = 3
 
 	// OriginMiddleLeft is middle-left
-	OriginMiddleLeft
+	OriginMiddleLeft Origin = 4
 
 	// OriginMiddleCenter is middle-center
-	OriginMiddleCenter
+	OriginMiddleCenter Origin = 5
 
 	// OriginMiddleRight is middle-right
-	OriginMiddleRight
+	OriginMiddleRight Origin = 6
 
 	// OriginBottomLeft is bottom-left
-	OriginBottomLeft
+	OriginBottomLeft Origin = 7
 
 	// OriginBottomCenter is bottom-center
-	OriginBottomCenter
+	OriginBottomCenter Origin = 8
 
 	// OriginBottomRight is bottom-right
-	OriginBottomRight
+	OriginBottomRight Origin = 9
+
+	originMax Origin = 10
 )
 
 func (o Origin) String() string {
@@ -1087,6 +1089,14 @@ func (s *parseState) setValue(key, value string) error {
 			int(math.Round(maxY*rectangleScale)),
 		)
 		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// InputOrigin
+	case "ig":
+		ig, err := strconv.Atoi(value)
+		if err != nil || ig < 0 || Origin(ig) >= originMax {
+			return fmt.Errorf("imageflux: invalid input origin %q", value)
+		}
+		s.config.InputOrigin = Origin(ig)
 	}
 	return nil
 }
