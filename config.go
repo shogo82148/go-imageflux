@@ -93,11 +93,18 @@ type Config struct {
 	Format Format
 
 	// Quality is quality of the output image.
+	// It is used when the output format is JPEG or WebP.
 	Quality int
 
 	// DisableOptimization disables optimization of the Huffman coding table
 	// of the output image when the output format is JPEG.
 	DisableOptimization bool
+
+	// Lossless enables lossless compression when the output format is WebP.
+	Lossless bool
+
+	// ExifOption specifies the Exif information to be included in the output image.
+	ExifOption ExifOption
 
 	// Unsharp configures unsharp mask.
 	Unsharp Unsharp
@@ -344,21 +351,42 @@ const (
 	// FormatAuto encodes the image by the same format with the input image.
 	FormatAuto Format = "auto"
 
-	// FormatJPEG encodes the image as a JPEG.
+	// FormatJPEG encodes the image as JPEG.
 	FormatJPEG Format = "jpg"
 
-	// FormatPNG encodes the image as a PNG.
+	// FormatPNG encodes the image as PNG.
 	FormatPNG Format = "png"
 
-	// FormatGIF encodes the image as a GIF.
+	// FormatGIF encodes the image as GIF.
 	FormatGIF Format = "gif"
 
+	// FormatWebP encodes the image as WebP.
+	FormatWebP Format = "webp"
+
+	// FormatWebPAuto encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as the same format with the input image.
+	FormatWebPAuto Format = "webp:auto"
+
+	// FormatWebPJPEG encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as JPEG.
+	FormatWebPJPEG Format = "webp:jpg"
+
+	// FormatWebPPNG encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as PNG.
+	FormatWebPPNG Format = "webp:png"
+
+	// FormatWebPGIF encodes the image as a WebP if the client supports WebP.
+	// Otherwise, the image is encoded as GIF.
+	FormatWebPGIF Format = "webp:gif"
+
 	// FormatWebPFromJPEG encodes the image as a WebP.
-	// The input image should be a JPEG.
+	//
+	// Deprecated: use FormatWebPJPEG instead.
 	FormatWebPFromJPEG Format = "webp:jpeg"
 
 	// FormatWebPFromPNG encodes the image as a WebP.
-	// The input image should be a PNG.
+	//
+	// Deprecated: use FormatWebPPNG instead.
 	FormatWebPFromPNG Format = "webp:png"
 )
 
@@ -439,17 +467,17 @@ const (
 
 	// ThroughGIF skips converting GIF images.
 	ThroughGIF
+
+	// ThroughWebP skips converting WebP images.
+	ThroughWebP
 )
 
 func (t Through) String() string {
-	var buf [12]byte
+	var buf [32]byte
 	return string(t.append(buf[:]))
 }
 
 func (t Through) append(buf []byte) []byte {
-	if t == 0 {
-		return buf
-	}
 	if (t & ThroughJPEG) != 0 {
 		buf = append(buf, "jpg:"...)
 	}
@@ -458,6 +486,12 @@ func (t Through) append(buf []byte) []byte {
 	}
 	if (t & ThroughGIF) != 0 {
 		buf = append(buf, "gif:"...)
+	}
+	if (t & ThroughWebP) != 0 {
+		buf = append(buf, "webp"...)
+	}
+	if len(buf) == 0 {
+		return buf
 	}
 	return buf[:len(buf)-1]
 }
@@ -485,6 +519,21 @@ const (
 
 	// PaddingModeLeave leaves the overflow area of the specified image as it is.
 	PaddingModeLeave PaddingMode = 1
+)
+
+// ExifOption specifies the Exif information to be included in the output image.
+type ExifOption int
+
+const (
+	// ExifOptionDefault is the default value of ExifOption.
+	ExifOptionDefault ExifOption = 0
+
+	// ExifOptionStrip removes all Exif information from the output image.
+	ExifOptionStrip ExifOption = 1
+
+	// ExifOptionKeepOrientation removes all Exif information
+	// except Orientation from the output image.
+	ExifOptionKeepOrientation ExifOption = 2
 )
 
 func (c *Config) String() string {
@@ -671,6 +720,14 @@ func (c *Config) append(buf []byte) []byte {
 	}
 	if c.DisableOptimization {
 		buf = append(buf, "o=0,"...)
+	}
+	if c.Lossless {
+		buf = append(buf, "lossless=1,"...)
+	}
+	if c.ExifOption != ExifOptionDefault {
+		buf = append(buf, "s="...)
+		buf = strconv.AppendInt(buf, int64(c.ExifOption), 10)
+		buf = append(buf, ',')
 	}
 
 	// image filters

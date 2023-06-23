@@ -21,7 +21,7 @@ func BenchmarkConfig(b *testing.B) {
 		Background:      color.Black,
 		InputRotate:     RotateLeftBottom,
 		OutputRotate:    RotateLeftBottom,
-		Through:         ThroughJPEG | ThroughPNG | ThroughGIF,
+		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 		Overlays: []Overlay{
 			{
 				URL:            "http://example.com/",
@@ -379,6 +379,7 @@ func TestConfig(t *testing.T) {
 			output: "l=(mask=alpha:1%2Fimages%2F1.png)",
 		},
 
+		// output format
 		{
 			config: &Config{
 				Format: FormatWebPFromPNG,
@@ -396,6 +397,18 @@ func TestConfig(t *testing.T) {
 				DisableOptimization: true,
 			},
 			output: "o=0",
+		},
+		{
+			config: &Config{
+				Lossless: true,
+			},
+			output: "lossless=1",
+		},
+		{
+			config: &Config{
+				ExifOption: ExifOptionKeepOrientation,
+			},
+			output: "s=2",
 		},
 
 		// image filters
