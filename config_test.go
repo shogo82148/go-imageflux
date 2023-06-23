@@ -306,57 +306,79 @@ func TestConfig(t *testing.T) {
 			},
 			output: "through=jpg:png:gif",
 		},
+
+		// overlays
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL: "http://example.com/",
+					URL: "images/1.png",
 				}},
 			},
-			output: "l=(%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:    "http://example.com/",
+					URL:    "images/1.png",
 					Offset: image.Pt(100, 200),
 				}},
 			},
-			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(x=100,y=200%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:         "http://example.com/",
+					URL:         "images/1.png",
 					OffsetRatio: image.Pt(25, 75),
 					OffsetMax:   image.Pt(100, 100),
 				}},
 			},
-			output: "l=(xr=0.25,yr=0.75%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(xr=0.25,yr=0.75%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{{
-					URL:           "http://example.com/",
+					URL:           "images/1.png",
 					OverlayOrigin: OriginTopLeft,
 				}},
 			},
-			output: "l=(lg=1%2fhttp%3A%2F%2Fexample.com%2F)",
+			output: "l=(lg=1%2Fimages%2F1.png)",
 		},
 		{
 			config: &Config{
 				Overlays: []Overlay{
 					{
-						URL:    "http://example.com/1.png",
+						URL:    "images/1.png",
 						Offset: image.Pt(100, 200),
 					},
 					{
-						URL:    "http://example.com/2.png",
+						URL:    "images/2.png",
 						Offset: image.Pt(200, 100),
 					},
 				},
 			},
-			output: "l=(x=100,y=200%2fhttp%3A%2F%2Fexample.com%2F1.png),l=(x=200,y=100%2fhttp%3A%2F%2Fexample.com%2F2.png)",
+			output: "l=(x=100,y=200%2Fimages%2F1.png),l=(x=200,y=100%2Fimages%2F2.png)",
 		},
+		{
+			config: &Config{
+				Overlays: []Overlay{{
+					URL:      "images/1.png",
+					MaskType: MaskTypeWhite,
+				}},
+			},
+			output: "l=(mask=white%2Fimages%2F1.png)",
+		},
+		{
+			config: &Config{
+				Overlays: []Overlay{{
+					URL:         "images/1.png",
+					MaskType:    MaskTypeAlpha,
+					PaddingMode: PaddingModeLeave,
+				}},
+			},
+			output: "l=(mask=alpha:1%2Fimages%2F1.png)",
+		},
+
 		{
 			config: &Config{
 				Format: FormatWebPFromPNG,
@@ -440,7 +462,7 @@ func TestConfig(t *testing.T) {
 
 	for _, c := range cases {
 		if got := c.config.String(); got != c.output {
-			t.Errorf("%#v: want %s, got %s", c.config, c.output, got)
+			t.Errorf("%#v: want %q, got %q", c.config, c.output, got)
 		}
 	}
 }
