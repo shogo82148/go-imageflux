@@ -90,8 +90,13 @@ type Config struct {
 	Overlays []Overlay
 
 	// Output Parameters.
-	Format              Format
-	Quality             int
+	Format Format
+
+	// Quality is quality of the output image.
+	Quality int
+
+	// DisableOptimization disables optimization of the Huffman coding table
+	// of the output image when the output format is JPEG.
 	DisableOptimization bool
 
 	// Unsharp configures unsharp mask.
@@ -206,6 +211,12 @@ type Overlay struct {
 
 	// OverlayOrigin is the position of the overlay image origin.
 	OverlayOrigin Origin
+
+	// MaskType specifies the area to be treated as a mask.
+	MaskType MaskType
+
+	// PaddingMode specifies processing when the specified image is smaller than the input image.
+	PaddingMode PaddingMode
 }
 
 // Unsharp is an unsharp filter config.
@@ -450,6 +461,31 @@ func (t Through) append(buf []byte) []byte {
 	}
 	return buf[:len(buf)-1]
 }
+
+// MaskType specifies the area to be treated as a mask.
+type MaskType string
+
+const (
+	// MaskTypeWhite clips the mask image leaving the white parts.
+	MaskTypeWhite MaskType = "white"
+
+	// MaskTypeBlack clips the mask image leaving the black parts.
+	MaskTypeBlack MaskType = "black"
+
+	// MaskTypeAlpha clips the mask image leaving the opaque parts.
+	MaskTypeAlpha MaskType = "alpha"
+)
+
+// PaddingMode specifies processing when the specified image is smaller than the input image.
+type PaddingMode int
+
+const (
+	// PaddingModeDefault makes the part of the image that protrudes from the specified image transparent.
+	PaddingModeDefault PaddingMode = 0
+
+	// PaddingModeLeave leaves the overflow area of the specified image as it is.
+	PaddingModeLeave PaddingMode = 1
+)
 
 func (c *Config) String() string {
 	if c == nil {
@@ -861,10 +897,21 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 
-	if len(buf) > l && buf[len(buf)-1] == ',' {
-		buf = buf[:len(buf)-1]
+	// mask
+	if o.MaskType != "" {
+		buf = append(buf, "mask="...)
+		buf = append(buf, o.MaskType...)
+		if o.PaddingMode != 0 {
+			buf = append(buf, ':')
+			buf = strconv.AppendInt(buf, int64(o.PaddingMode), 10)
+		}
+		buf = append(buf, ',')
 	}
-	buf = append(buf, "%2f"...)
+
+	if len(buf) > l {
+		buf = buf[:len(buf)-1] // remove trailing comma
+	}
+	buf = append(buf, "%2F"...)
 	buf = append(buf, url.QueryEscape(o.URL)...)
 	return buf
 }
