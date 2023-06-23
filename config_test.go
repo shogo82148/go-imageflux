@@ -307,6 +307,12 @@ func TestConfig(t *testing.T) {
 			},
 			output: "through=jpg:png:gif",
 		},
+		{
+			config: &Config{
+				Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+			},
+			output: "through=jpg:png:gif:webp",
+		},
 
 		// overlays
 		{
@@ -631,6 +637,46 @@ func TestParseConfig(t *testing.T) {
 			input: "b=ffffff80",
 			want: &Config{
 				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x80},
+			},
+		},
+
+		// rotation
+		{
+			input: "ir=8",
+			want: &Config{
+				InputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			input: "ir=auto",
+			want: &Config{
+				InputRotate: RotateAuto,
+			},
+		},
+		{
+			input: "or=8",
+			want: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			input: "or=auto",
+			want: &Config{
+				OutputRotate: RotateAuto,
+			},
+		},
+		{
+			// for backward compatibility,
+			// you can use "r" instead of "or".
+			input: "r=8",
+			want: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			input: "r=auto",
+			want: &Config{
+				OutputRotate: RotateAuto,
 			},
 		},
 	}

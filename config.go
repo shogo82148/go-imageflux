@@ -406,32 +406,37 @@ func (f Format) String() string {
 type Rotate int
 
 const (
-	// RotateDefault is the default value of Rotate. It is same as RotateTopLeft.
-	RotateDefault Rotate = iota
+	// RotateDefault is the default value of Rotate.
+	// It is same effect as RotateTopLeft.
+	RotateDefault Rotate = 0
+
+	rotateMin Rotate = 1
 
 	// RotateTopLeft does not anything.
-	RotateTopLeft
+	RotateTopLeft Rotate = 1
 
 	// RotateTopRight flips the image left and right.
-	RotateTopRight
+	RotateTopRight Rotate = 2
 
 	// RotateBottomRight rotates the image 180 degrees.
-	RotateBottomRight
+	RotateBottomRight Rotate = 3
 
 	// RotateBottomLeft flips the image upside down.
-	RotateBottomLeft
+	RotateBottomLeft Rotate = 4
 
 	// RotateLeftTop mirrors the image around the diagonal axis.
-	RotateLeftTop
+	RotateLeftTop Rotate = 5
 
 	// RotateRightTop rotates the image left 90 degrees.
-	RotateRightTop
+	RotateRightTop Rotate = 6
 
 	// RotateRightBottom rotates the image 180 degrees and mirrors the image around the diagonal axis.
-	RotateRightBottom
+	RotateRightBottom Rotate = 7
 
 	// RotateLeftBottom rotates the image right 90 degrees.
-	RotateLeftBottom
+	RotateLeftBottom Rotate = 8
+
+	rotateMax Rotate = 9
 
 	// RotateAuto parses the Orientation of the Exif information and rotates the image.
 	RotateAuto Rotate = -1
@@ -496,7 +501,7 @@ func (t Through) append(buf []byte) []byte {
 		buf = append(buf, "gif:"...)
 	}
 	if (t & ThroughWebP) != 0 {
-		buf = append(buf, "webp"...)
+		buf = append(buf, "webp:"...)
 	}
 	if len(buf) == 0 {
 		return buf
@@ -1179,6 +1184,30 @@ func (s *parseState) setValue(key, value string) error {
 			}
 		} else {
 			return fmt.Errorf("imageflux: invalid background %q", value)
+		}
+
+	// InputRotate
+	case "ir":
+		if value == "auto" {
+			s.config.InputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid input rotate %q", value)
+			}
+			s.config.InputRotate = Rotate(ir)
+		}
+
+	// OutputRotate
+	case "or", "r":
+		if value == "auto" {
+			s.config.OutputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid output rotate %q", value)
+			}
+			s.config.OutputRotate = Rotate(ir)
 		}
 	}
 	return nil
