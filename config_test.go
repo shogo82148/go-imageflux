@@ -516,6 +516,14 @@ func TestParseConfig(t *testing.T) {
 				DevicePixelRatio: 5,
 			},
 		},
+
+		// clipping parameters
+		{
+			input: "ic=100:150:200:250",
+			want: &Config{
+				InputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
 	}
 
 	for _, c := range cases {

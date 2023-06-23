@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 // Config is configure of image.
@@ -558,25 +559,25 @@ func (c *Config) append(buf []byte) []byte {
 
 	l := len(buf)
 	if c.Width != 0 {
-		buf = append(buf, 'w', '=')
+		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
 		buf = append(buf, ',')
 	}
 	if c.Height != 0 {
-		buf = append(buf, 'h', '=')
+		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(c.Height), 10)
 		buf = append(buf, ',')
 	}
 	if c.DisableEnlarge {
-		buf = append(buf, 'u', '=', '0', ',')
+		buf = append(buf, "u=0,"...)
 	}
 	if c.AspectMode != AspectModeDefault {
-		buf = append(buf, 'a', '=')
+		buf = append(buf, "a="...)
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
 		buf = append(buf, ',')
 	}
 	if c.DevicePixelRatio != 0 {
-		buf = append(buf, 'd', 'p', 'r', '=')
+		buf = append(buf, "dpr="...)
 		buf = strconv.AppendFloat(buf, c.DevicePixelRatio, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
@@ -1035,10 +1036,7 @@ func (s *parseState) setValue(key, value string) error {
 	// AspectMode
 	case "a":
 		a, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
-		}
-		if a < 0 || AspectMode(a+1) >= aspectModeMax {
+		if err != nil || a < 0 || AspectMode(a+1) >= aspectModeMax {
 			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
 		}
 		s.config.AspectMode = AspectMode(a + 1)
@@ -1050,6 +1048,21 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid device pixel ratio %q", value)
 		}
 		s.config.DevicePixelRatio = dpr
+
+	// InputClip
+	case "ic":
+		a, b, c, d, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(a)
+		minY, err1 := strconv.Atoi(b)
+		maxX, err2 := strconv.Atoi(c)
+		maxY, err3 := strconv.Atoi(d)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		s.config.InputClip = image.Rect(minX, minY, maxX, maxY)
 	}
 	return nil
 }
@@ -1111,4 +1124,25 @@ func (s *parseState) skipComma() (skipped bool) {
 
 func (s *parseState) rest() string {
 	return s.s[s.idx:]
+}
+
+func split4(s string) (a, b, c, d string, ok bool) {
+	idx1 := strings.IndexByte(s, ':')
+	if idx1 < 0 {
+		return
+	}
+	idx2 := strings.IndexByte(s[idx1+1:], ':')
+	if idx2 < 0 {
+		return
+	}
+	idx3 := strings.IndexByte(s[idx1+idx2+2:], ':')
+	if idx3 < 0 {
+		return
+	}
+	a = s[:idx1]
+	b = s[idx1+1 : idx1+idx2+1]
+	c = s[idx1+idx2+2 : idx1+idx2+idx3+2]
+	d = s[idx1+idx2+idx3+3:]
+	ok = true
+	return
 }
