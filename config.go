@@ -70,7 +70,17 @@ type Config struct {
 	// Background is background color.
 	Background color.Color
 
-	// Rotate rotates the image.
+	// InputRotate rotates the image before processing.
+	InputRotate Rotate
+
+	// OutputRotate rotates the image after processing.
+	OutputRotate Rotate
+
+	// OutputRotate rotates the image after processing.
+	// This is an alias of OutputRotate.
+	// If both Rotate and OutputRotate are set, OutputRotate is used.
+	//
+	// Deprecated: Use OutputRotate instead.
 	Rotate Rotate
 
 	Through Through
@@ -513,15 +523,30 @@ func (c *Config) append(buf []byte) []byte {
 			buf = append(buf, c...)
 		}
 	}
-	if c.Rotate != RotateDefault {
-		if c.Rotate == RotateAuto {
-			buf = append(buf, "r=auto,"...)
+
+	// rotation
+	if ir := c.InputRotate; ir != RotateDefault {
+		if ir == RotateAuto {
+			buf = append(buf, "ir=auto,"...)
 		} else {
-			buf = append(buf, "r="...)
-			buf = strconv.AppendInt(buf, int64(c.Rotate), 10)
+			buf = append(buf, "ir="...)
+			buf = strconv.AppendInt(buf, int64(ir), 10)
 			buf = append(buf, ',')
 		}
 	}
+	if r, or := c.Rotate, c.OutputRotate; r != RotateDefault || or != RotateDefault {
+		if or == RotateDefault {
+			or = r
+		}
+		if or == RotateAuto {
+			buf = append(buf, "or=auto,"...)
+		} else {
+			buf = append(buf, "or="...)
+			buf = strconv.AppendInt(buf, int64(or), 10)
+			buf = append(buf, ',')
+		}
+	}
+
 	if c.Through != 0 {
 		buf = append(buf, "through="...)
 		buf = c.Through.append(buf)
