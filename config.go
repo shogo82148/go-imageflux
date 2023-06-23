@@ -137,12 +137,40 @@ type Overlay struct {
 	// AspectMode is aspect mode.
 	AspectMode AspectMode
 
-	// Clip is a position in pixel of clipping area.
+	// InputClip is a position in pixel of clipping area.
+	// This is used for the input image.
+	InputClip image.Rectangle
+
+	// InputClipRatio is a position in ratio of clipping area.
+	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
+	// This is used for the input image.
+	InputClipRatio image.Rectangle
+
+	// InputOrigin is the position of the input image origin.
+	InputOrigin Origin
+
+	// OutputClip is a position in pixel of clipping area.
+	// This is used for the output image.
+	OutputClip image.Rectangle
+
+	// Clip is an alias of OutputClip.
+	// If both Clip and OutputClip are set, OutputClip is used.
+	//
+	// Deprecated: Use OutputClip instead.
 	Clip image.Rectangle
 
-	// ClipRatio is a position in ratio of clipping area.
+	// OutputClipRatio is a position in ratio of clipping area.
 	// The coordinates of the rectangle are divided by ClipMax.X or ClipMax.Y.
+	OutputClipRatio image.Rectangle
+
+	// ClipRatio is an alias of OutputClipRatio.
+	// If both ClipRatio and OutputClipRatio are set, OutputClipRatio is used.
+	//
+	// Deprecated: Use OutputClipRatio instead.
 	ClipRatio image.Rectangle
+
+	// OutputOrigin is the position of the output image origin.
+	OutputOrigin Origin
 
 	// ClipMax is the denominators of ClipRatio.
 	ClipMax image.Point
@@ -153,7 +181,17 @@ type Overlay struct {
 	// Background is background color.
 	Background color.Color
 
-	// Rotate rotates the image.
+	// InputRotate rotates the image before processing.
+	InputRotate Rotate
+
+	// OutputRotate rotates the image after processing.
+	OutputRotate Rotate
+
+	// OutputRotate rotates the image after processing.
+	// This is an alias of OutputRotate.
+	// If both Rotate and OutputRotate are set, OutputRotate is used.
+	//
+	// Deprecated: Use OutputRotate instead.
 	Rotate Rotate
 
 	// Offset is an offset in pixel of overlay image.
@@ -458,7 +496,7 @@ func (c *Config) append(buf []byte) []byte {
 
 	// clipping parameters
 	if ic := c.InputClip; ic != zr {
-		buf = append(buf, 'i', 'c', '=')
+		buf = append(buf, "ic="...)
 		buf = strconv.AppendInt(buf, int64(ic.Min.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(ic.Min.Y), 10)
@@ -473,7 +511,7 @@ func (c *Config) append(buf []byte) []byte {
 		y1 := float64(ic.Min.Y) / float64(cm.Y)
 		x2 := float64(ic.Max.X) / float64(cm.X)
 		y2 := float64(ic.Max.Y) / float64(cm.Y)
-		buf = append(buf, 'i', 'c', 'r', '=')
+		buf = append(buf, "icr="...)
 		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
@@ -484,7 +522,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 	if ig := c.InputOrigin; ig != OriginDefault {
-		buf = append(buf, 'i', 'g', '=')
+		buf = append(buf, "ig="...)
 		buf = strconv.AppendInt(buf, int64(ig), 10)
 		buf = append(buf, ',')
 	}
@@ -492,7 +530,7 @@ func (c *Config) append(buf []byte) []byte {
 		if oc == zr {
 			oc = c
 		}
-		buf = append(buf, 'o', 'c', '=')
+		buf = append(buf, "oc="...)
 		buf = strconv.AppendInt(buf, int64(oc.Min.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(oc.Min.Y), 10)
@@ -510,7 +548,7 @@ func (c *Config) append(buf []byte) []byte {
 		y1 := float64(oc.Min.Y) / float64(cm.Y)
 		x2 := float64(oc.Max.X) / float64(cm.X)
 		y2 := float64(oc.Max.Y) / float64(cm.Y)
-		buf = append(buf, 'o', 'c', 'r', '=')
+		buf = append(buf, "ocr="...)
 		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
@@ -521,7 +559,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, ',')
 	}
 	if og := c.OutputOrigin; og != OriginDefault {
-		buf = append(buf, 'o', 'g', '=')
+		buf = append(buf, "og="...)
 		buf = strconv.AppendInt(buf, int64(og), 10)
 		buf = append(buf, ',')
 	}
@@ -578,25 +616,25 @@ func (c *Config) append(buf []byte) []byte {
 
 	if len(c.Overlays) > 0 {
 		for _, overlay := range c.Overlays {
-			buf = append(buf, 'l', '=', '(')
+			buf = append(buf, "l=("...)
 			buf = overlay.append(buf)
-			buf = append(buf, ',')
-			buf = append(buf[:len(buf)-1], ')', ',')
+			buf = append(buf, "),"...)
 		}
 	}
 
+	// output formats
 	if c.Format != "" {
-		buf = append(buf, 'f', '=')
+		buf = append(buf, "f="...)
 		buf = append(buf, c.Format...)
 		buf = append(buf, ',')
 	}
 	if c.Quality != 0 {
-		buf = append(buf, 'q', '=')
+		buf = append(buf, "q="...)
 		buf = strconv.AppendInt(buf, int64(c.Quality), 10)
 		buf = append(buf, ',')
 	}
 	if c.DisableOptimization {
-		buf = append(buf, 'o', '=', '0', ',')
+		buf = append(buf, "o=0,"...)
 	}
 
 	// image filters
@@ -686,23 +724,25 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(o.AspectMode-1), 10)
 		buf = append(buf, ',')
 	}
-	if o.Clip != zr {
-		buf = append(buf, 'c', '=')
-		buf = strconv.AppendInt(buf, int64(o.Clip.Min.X), 10)
+
+	// clipping parameters
+	if ic := o.InputClip; ic != zr {
+		buf = append(buf, "ic="...)
+		buf = strconv.AppendInt(buf, int64(ic.Min.X), 10)
 		buf = append(buf, ':')
-		buf = strconv.AppendInt(buf, int64(o.Clip.Min.Y), 10)
+		buf = strconv.AppendInt(buf, int64(ic.Min.Y), 10)
 		buf = append(buf, ':')
-		buf = strconv.AppendInt(buf, int64(o.Clip.Max.X), 10)
+		buf = strconv.AppendInt(buf, int64(ic.Max.X), 10)
 		buf = append(buf, ':')
-		buf = strconv.AppendInt(buf, int64(o.Clip.Max.Y), 10)
+		buf = strconv.AppendInt(buf, int64(ic.Max.Y), 10)
 		buf = append(buf, ',')
 	}
-	if o.ClipRatio != zr && o.ClipMax != zp {
-		x1 := float64(o.ClipRatio.Min.X) / float64(o.ClipMax.X)
-		y1 := float64(o.ClipRatio.Min.Y) / float64(o.ClipMax.Y)
-		x2 := float64(o.ClipRatio.Max.X) / float64(o.ClipMax.X)
-		y2 := float64(o.ClipRatio.Max.Y) / float64(o.ClipMax.Y)
-		buf = append(buf, 'c', 'r', '=')
+	if cm, ic := o.ClipMax, o.InputClipRatio; cm != zp && ic != zr {
+		x1 := float64(ic.Min.X) / float64(cm.X)
+		y1 := float64(ic.Min.Y) / float64(cm.Y)
+		x2 := float64(ic.Max.X) / float64(cm.X)
+		y2 := float64(ic.Max.Y) / float64(cm.Y)
+		buf = append(buf, "icr="...)
 		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
@@ -712,6 +752,49 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
+	if ig := o.InputOrigin; ig != OriginDefault {
+		buf = append(buf, "ig="...)
+		buf = strconv.AppendInt(buf, int64(ig), 10)
+		buf = append(buf, ',')
+	}
+	if c, oc := o.Clip, o.OutputClip; c != zr || oc != zr {
+		if oc == zr {
+			oc = c
+		}
+		buf = append(buf, "oc="...)
+		buf = strconv.AppendInt(buf, int64(oc.Min.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(oc.Min.Y), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(oc.Max.X), 10)
+		buf = append(buf, ':')
+		buf = strconv.AppendInt(buf, int64(oc.Max.Y), 10)
+		buf = append(buf, ',')
+	}
+	if c, oc, cm := o.ClipRatio, o.OutputClipRatio, o.ClipMax; cm != zp && (c != zr || oc != zr) {
+		if oc == zr {
+			oc = c
+		}
+		x1 := float64(oc.Min.X) / float64(cm.X)
+		y1 := float64(oc.Min.Y) / float64(cm.Y)
+		x2 := float64(oc.Max.X) / float64(cm.X)
+		y2 := float64(oc.Max.Y) / float64(cm.Y)
+		buf = append(buf, "ocr="...)
+		buf = strconv.AppendFloat(buf, x1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y1, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
+		buf = append(buf, ':')
+		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
+		buf = append(buf, ',')
+	}
+	if og := o.OutputOrigin; og != OriginDefault {
+		buf = append(buf, "og="...)
+		buf = strconv.AppendInt(buf, int64(og), 10)
+		buf = append(buf, ',')
+	}
+
 	if o.Origin != OriginDefault {
 		buf = append(buf, 'g', '=')
 		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
@@ -732,34 +815,48 @@ func (o Overlay) append(buf []byte) []byte {
 			buf = append(buf, c...)
 		}
 	}
-	if o.Rotate != RotateDefault {
-		if o.Rotate == RotateAuto {
-			buf = append(buf, "r=auto,"...)
+
+	// rotation
+	if ir := o.InputRotate; ir != RotateDefault {
+		if ir == RotateAuto {
+			buf = append(buf, "ir=auto,"...)
 		} else {
-			buf = append(buf, "r="...)
-			buf = strconv.AppendInt(buf, int64(o.Rotate), 10)
+			buf = append(buf, "ir="...)
+			buf = strconv.AppendInt(buf, int64(ir), 10)
+			buf = append(buf, ',')
+		}
+	}
+	if r, or := o.Rotate, o.OutputRotate; r != RotateDefault || or != RotateDefault {
+		if or == RotateDefault {
+			or = r
+		}
+		if or == RotateAuto {
+			buf = append(buf, "or=auto,"...)
+		} else {
+			buf = append(buf, "or="...)
+			buf = strconv.AppendInt(buf, int64(or), 10)
 			buf = append(buf, ',')
 		}
 	}
 
 	if o.Offset != zp {
-		buf = append(buf, 'x', '=')
+		buf = append(buf, "x="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
-		buf = append(buf, ',', 'y', '=')
+		buf = append(buf, ",y="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
 		buf = append(buf, ',')
 	}
 	if o.OffsetRatio != zp && o.OffsetMax != zp {
 		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
 		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
-		buf = append(buf, 'x', 'r', '=')
+		buf = append(buf, "xr="...)
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
-		buf = append(buf, ',', 'y', 'r', '=')
+		buf = append(buf, ",yr="...)
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
 	if o.OverlayOrigin != OriginDefault {
-		buf = append(buf, 'l', 'g', '=')
+		buf = append(buf, "lg="...)
 		buf = strconv.AppendInt(buf, int64(o.OverlayOrigin), 10)
 		buf = append(buf, ',')
 	}

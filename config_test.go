@@ -306,6 +306,8 @@ func TestConfig(t *testing.T) {
 			},
 			output: "through=jpg:png:gif",
 		},
+
+		// overlays
 		{
 			config: &Config{
 				Overlays: []Overlay{{
