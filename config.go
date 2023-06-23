@@ -26,7 +26,6 @@ type Config struct {
 	// If DevicePixelRatio is 0, it is ignored.
 	DevicePixelRatio float64
 
-	// Clip is a position in pixel of clipping area.
 	// InputClip is a position in pixel of clipping area.
 	// This is used for the input image.
 	InputClip image.Rectangle
