@@ -99,6 +99,9 @@ type Config struct {
 	// of the output image when the output format is JPEG.
 	DisableOptimization bool
 
+	// Lossless enables lossless compression when the output format is WebP.
+	Lossless bool
+
 	// Unsharp configures unsharp mask.
 	Unsharp Unsharp
 
@@ -677,6 +680,9 @@ func (c *Config) append(buf []byte) []byte {
 	}
 	if c.DisableOptimization {
 		buf = append(buf, "o=0,"...)
+	}
+	if c.Lossless {
+		buf = append(buf, "lossless=1,"...)
 	}
 
 	// image filters
