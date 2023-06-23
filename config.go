@@ -439,17 +439,17 @@ const (
 
 	// ThroughGIF skips converting GIF images.
 	ThroughGIF
+
+	// ThroughWebP skips converting WebP images.
+	ThroughWebP
 )
 
 func (t Through) String() string {
-	var buf [12]byte
+	var buf [32]byte
 	return string(t.append(buf[:]))
 }
 
 func (t Through) append(buf []byte) []byte {
-	if t == 0 {
-		return buf
-	}
 	if (t & ThroughJPEG) != 0 {
 		buf = append(buf, "jpg:"...)
 	}
@@ -458,6 +458,12 @@ func (t Through) append(buf []byte) []byte {
 	}
 	if (t & ThroughGIF) != 0 {
 		buf = append(buf, "gif:"...)
+	}
+	if (t & ThroughWebP) != 0 {
+		buf = append(buf, "webp"...)
+	}
+	if len(buf) == 0 {
+		return buf
 	}
 	return buf[:len(buf)-1]
 }

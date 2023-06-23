@@ -21,7 +21,7 @@ func BenchmarkConfig(b *testing.B) {
 		Background:      color.Black,
 		InputRotate:     RotateLeftBottom,
 		OutputRotate:    RotateLeftBottom,
-		Through:         ThroughJPEG | ThroughPNG | ThroughGIF,
+		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 		Overlays: []Overlay{
 			{
 				URL:            "http://example.com/",
