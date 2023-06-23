@@ -83,6 +83,7 @@ type Config struct {
 	// Deprecated: Use OutputRotate instead.
 	Rotate Rotate
 
+	// Through is a format to pass through.
 	Through Through
 
 	// Overlay Parameters.
@@ -93,8 +94,30 @@ type Config struct {
 	Quality             int
 	DisableOptimization bool
 
+	// Unsharp configures unsharp mask.
 	Unsharp Unsharp
-	Blur    Blur
+
+	// Blur configures blur.
+	Blur Blur
+
+	// GrayScale converts to gray scale.
+	// 0 means no conversion and 100 means full conversion.
+	GrayScale int
+
+	// Sepia converts to sepia.
+	// 0 means no conversion and 100 means full conversion.
+	Sepia int
+
+	// Brightness adjusts brightness.
+	// The value set in Brightness plus 100 is actually used.
+	Brightness int
+
+	// Contrast adjusts contrast.
+	// The value set in Contrast plus 100 is actually used.
+	Contrast int
+
+	// Invert inverts the image if it is true.
+	Invert bool
 }
 
 // Overlay is the configure of an overlay image.
@@ -576,16 +599,39 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, 'o', '=', '0', ',')
 	}
 
+	// image filters
 	if c.Unsharp.Radius != 0 {
 		buf = append(buf, "unsharp="...)
 		buf = c.Unsharp.append(buf)
 		buf = append(buf, ',')
 	}
-
 	if c.Blur.Radius != 0 {
 		buf = append(buf, "blur="...)
 		buf = c.Blur.append(buf)
 		buf = append(buf, ',')
+	}
+	if c.GrayScale != 0 {
+		buf = append(buf, "grayscale="...)
+		buf = strconv.AppendInt(buf, int64(c.GrayScale), 10)
+		buf = append(buf, ',')
+	}
+	if c.Sepia != 0 {
+		buf = append(buf, "sepia="...)
+		buf = strconv.AppendInt(buf, int64(c.Sepia), 10)
+		buf = append(buf, ',')
+	}
+	if c.Brightness != 0 {
+		buf = append(buf, "brightness="...)
+		buf = strconv.AppendInt(buf, int64(c.Brightness+100), 10)
+		buf = append(buf, ',')
+	}
+	if c.Contrast != 0 {
+		buf = append(buf, "contrast="...)
+		buf = strconv.AppendInt(buf, int64(c.Contrast+100), 10)
+		buf = append(buf, ',')
+	}
+	if c.Invert {
+		buf = append(buf, "invert=1,"...)
 	}
 
 	if len(buf) != l {

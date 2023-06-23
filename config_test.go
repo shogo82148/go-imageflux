@@ -375,6 +375,8 @@ func TestConfig(t *testing.T) {
 			},
 			output: "o=0",
 		},
+
+		// image filters
 		{
 			config: &Config{
 				Unsharp: Unsharp{
@@ -403,6 +405,36 @@ func TestConfig(t *testing.T) {
 				},
 			},
 			output: "blur=10x1",
+		},
+		{
+			config: &Config{
+				GrayScale: 100,
+			},
+			output: "grayscale=100",
+		},
+		{
+			config: &Config{
+				Sepia: 100,
+			},
+			output: "sepia=100",
+		},
+		{
+			config: &Config{
+				Brightness: 100,
+			},
+			output: "brightness=200",
+		},
+		{
+			config: &Config{
+				Contrast: 100,
+			},
+			output: "contrast=200",
+		},
+		{
+			config: &Config{
+				Invert: true,
+			},
+			output: "invert=1",
 		},
 	}
 
