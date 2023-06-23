@@ -674,6 +674,8 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 		{
+			// for backward compatibility,
+			// you can use "r" instead of "or".
 			input: "r=auto",
 			want: &Config{
 				OutputRotate: RotateAuto,
