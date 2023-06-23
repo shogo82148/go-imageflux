@@ -22,6 +22,10 @@ type Config struct {
 	// AspectMode is aspect mode.
 	AspectMode AspectMode
 
+	// DevicePixelRatio is a scale factor of device pixel ratio.
+	// If DevicePixelRatio is 0, it is ignored.
+	DevicePixelRatio float64
+
 	// Clip is a position in pixel of clipping area.
 	Clip image.Rectangle
 
@@ -383,6 +387,11 @@ func (c *Config) append(buf []byte) []byte {
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, 'a', '=')
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
+		buf = append(buf, ',')
+	}
+	if c.DevicePixelRatio != 0 {
+		buf = append(buf, 'd', 'p', 'r', '=')
+		buf = strconv.AppendFloat(buf, c.DevicePixelRatio, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
 	if c.Clip != zr {

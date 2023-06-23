@@ -103,6 +103,12 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
+				DevicePixelRatio: 5,
+			},
+			output: "dpr=5",
+		},
+		{
+			config: &Config{
 				Clip: image.Rect(100, 150, 200, 250),
 			},
 			output: "c=100:150:200:250",
