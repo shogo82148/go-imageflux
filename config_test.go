@@ -538,6 +538,41 @@ func TestParseConfig(t *testing.T) {
 				InputOrigin: OriginMiddleCenter,
 			},
 		},
+		{
+			input: "oc=100:150:200:250",
+			want: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
+		{
+			// for backward compatibility, you can use "c" instead of "oc".
+			input: "c=100:150:200:250",
+			want: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
+		{
+			input: "ocr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+		},
+		{
+			// for backward compatibility, you can use "cr" instead of "ocr".
+			input: "cr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+		},
+		{
+			input: "oc=100:150:200:250,og=5",
+			want: &Config{
+				OutputClip:   image.Rect(100, 150, 200, 250),
+				OutputOrigin: OriginMiddleCenter,
+			},
+		},
 	}
 
 	for _, c := range cases {

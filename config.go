@@ -1097,6 +1097,50 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid input origin %q", value)
 		}
 		s.config.InputOrigin = Origin(ig)
+
+	// OutputClip
+	case "oc", "c":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil {
+			return fmt.Errorf("imageflux: invalid output clip %q", value)
+		}
+		s.config.OutputClip = image.Rect(minX, minY, maxX, maxY)
+
+	// OutputClipRatio
+	case "ocr", "cr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil {
+			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
+		}
+		s.config.OutputClipRatio = image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// OutputOrigin
+	case "og":
+		og, err := strconv.Atoi(value)
+		if err != nil || og < 0 || Origin(og) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		}
+		s.config.OutputOrigin = Origin(og)
 	}
 	return nil
 }
