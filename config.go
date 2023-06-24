@@ -1,12 +1,17 @@
 package imageflux
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"net/url"
 	"strconv"
+	"strings"
 )
+
+const rectangleScale = 100
 
 // Config is configure of image.
 type Config struct {
@@ -238,13 +243,79 @@ func (u Unsharp) append(buf []byte) []byte {
 	buf = strconv.AppendInt(buf, int64(u.Radius), 10)
 	buf = append(buf, 'x')
 	buf = strconv.AppendFloat(buf, u.Sigma, 'f', -1, 64)
-	if u.Gain != 0 && u.Threshold != 0 {
+	if u.Threshold != 0 {
 		buf = append(buf, '+')
 		buf = strconv.AppendFloat(buf, u.Gain, 'f', -1, 64)
 		buf = append(buf, '+')
 		buf = strconv.AppendFloat(buf, u.Threshold, 'f', -1, 64)
 	}
 	return buf
+}
+
+func parseUnsharp(s string) (Unsharp, error) {
+	var u Unsharp
+
+	// radius
+	idx := strings.IndexByte(s, 'x')
+	if idx < 0 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if r <= 0 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	u.Radius = int(r)
+	s = s[idx+1:]
+
+	// sigma
+	idx = strings.IndexByte(s, '+')
+	if idx < 0 {
+		sigma, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+		}
+		if sigma <= 0 {
+			return u, errors.New("imageflux: invalid unsharp format")
+		}
+		u.Sigma = sigma
+		return u, nil
+	}
+	sigma, err := strconv.ParseFloat(s[:idx], 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if sigma == 0 {
+		return u, errors.New("imageflux: invalid unsharp format")
+	}
+	u.Sigma = sigma
+	s = s[idx+1:]
+
+	// gain
+	idx = strings.IndexByte(s, '+')
+	if idx < 0 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	gain, err := strconv.ParseFloat(s[:idx], 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	u.Gain = gain
+	s = s[idx+1:]
+
+	// threshold
+	threshold, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if threshold <= 0 || threshold >= 1 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	u.Threshold = threshold
+
+	return u, nil
 }
 
 // Blur is a blur config.
@@ -258,6 +329,36 @@ func (b Blur) append(buf []byte) []byte {
 	buf = append(buf, 'x')
 	buf = strconv.AppendFloat(buf, b.Sigma, 'f', -1, 64)
 	return buf
+}
+
+func parseBlur(s string) (Blur, error) {
+	idx := strings.IndexByte(s, 'x')
+	if idx < 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	// radius
+	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	if err != nil {
+		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
+	}
+	if r <= 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	// sigma
+	sigma, err := strconv.ParseFloat(s[idx+1:], 64)
+	if err != nil {
+		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
+	}
+	if sigma <= 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	return Blur{
+		Radius: int(r),
+		Sigma:  sigma,
+	}, nil
 }
 
 // AspectMode is aspect mode.
@@ -281,6 +382,8 @@ const (
 	// AspectModePad holds the the aspect ratio of the input image,
 	// and fills the unfilled portion with the specified background color.
 	AspectModePad
+
+	aspectModeMax
 )
 
 // Origin is the origin.
@@ -288,34 +391,36 @@ type Origin int
 
 const (
 	// OriginDefault is default origin.
-	OriginDefault Origin = iota
+	OriginDefault Origin = 0
 
 	// OriginTopLeft is top-left
-	OriginTopLeft
+	OriginTopLeft Origin = 1
 
 	// OriginTopCenter is top-center
-	OriginTopCenter
+	OriginTopCenter Origin = 2
 
 	// OriginTopRight is top-right
-	OriginTopRight
+	OriginTopRight Origin = 3
 
 	// OriginMiddleLeft is middle-left
-	OriginMiddleLeft
+	OriginMiddleLeft Origin = 4
 
 	// OriginMiddleCenter is middle-center
-	OriginMiddleCenter
+	OriginMiddleCenter Origin = 5
 
 	// OriginMiddleRight is middle-right
-	OriginMiddleRight
+	OriginMiddleRight Origin = 6
 
 	// OriginBottomLeft is bottom-left
-	OriginBottomLeft
+	OriginBottomLeft Origin = 7
 
 	// OriginBottomCenter is bottom-center
-	OriginBottomCenter
+	OriginBottomCenter Origin = 8
 
 	// OriginBottomRight is bottom-right
-	OriginBottomRight
+	OriginBottomRight Origin = 9
+
+	originMax Origin = 10
 )
 
 func (o Origin) String() string {
@@ -398,32 +503,37 @@ func (f Format) String() string {
 type Rotate int
 
 const (
-	// RotateDefault is the default value of Rotate. It is same as RotateTopLeft.
-	RotateDefault Rotate = iota
+	// RotateDefault is the default value of Rotate.
+	// It is same effect as RotateTopLeft.
+	RotateDefault Rotate = 0
+
+	rotateMin Rotate = 1
 
 	// RotateTopLeft does not anything.
-	RotateTopLeft
+	RotateTopLeft Rotate = 1
 
 	// RotateTopRight flips the image left and right.
-	RotateTopRight
+	RotateTopRight Rotate = 2
 
 	// RotateBottomRight rotates the image 180 degrees.
-	RotateBottomRight
+	RotateBottomRight Rotate = 3
 
 	// RotateBottomLeft flips the image upside down.
-	RotateBottomLeft
+	RotateBottomLeft Rotate = 4
 
 	// RotateLeftTop mirrors the image around the diagonal axis.
-	RotateLeftTop
+	RotateLeftTop Rotate = 5
 
 	// RotateRightTop rotates the image left 90 degrees.
-	RotateRightTop
+	RotateRightTop Rotate = 6
 
 	// RotateRightBottom rotates the image 180 degrees and mirrors the image around the diagonal axis.
-	RotateRightBottom
+	RotateRightBottom Rotate = 7
 
 	// RotateLeftBottom rotates the image right 90 degrees.
-	RotateLeftBottom
+	RotateLeftBottom Rotate = 8
+
+	rotateMax Rotate = 9
 
 	// RotateAuto parses the Orientation of the Exif information and rotates the image.
 	RotateAuto Rotate = -1
@@ -488,12 +598,37 @@ func (t Through) append(buf []byte) []byte {
 		buf = append(buf, "gif:"...)
 	}
 	if (t & ThroughWebP) != 0 {
-		buf = append(buf, "webp"...)
+		buf = append(buf, "webp:"...)
 	}
 	if len(buf) == 0 {
 		return buf
 	}
 	return buf[:len(buf)-1]
+}
+
+func parseThrough(s string) (Through, error) {
+	var t Through
+	for s != "" {
+		var v string
+		if idx := strings.IndexByte(s, ':'); idx >= 0 {
+			v = s[:idx]
+			s = s[idx+1:]
+		} else {
+			v = s
+			s = ""
+		}
+		switch v {
+		case "jpg":
+			t |= ThroughJPEG
+		case "png":
+			t |= ThroughPNG
+		case "gif":
+			t |= ThroughGIF
+		case "webp":
+			t |= ThroughWebP
+		}
+	}
+	return t, nil
 }
 
 // MaskType specifies the area to be treated as a mask.
@@ -528,12 +663,16 @@ const (
 	// ExifOptionDefault is the default value of ExifOption.
 	ExifOptionDefault ExifOption = 0
 
+	exifOptionMin ExifOption = 1
+
 	// ExifOptionStrip removes all Exif information from the output image.
 	ExifOptionStrip ExifOption = 1
 
 	// ExifOptionKeepOrientation removes all Exif information
 	// except Orientation from the output image.
 	ExifOptionKeepOrientation ExifOption = 2
+
+	exifOptionMax ExifOption = 3
 )
 
 func (c *Config) String() string {
@@ -556,25 +695,25 @@ func (c *Config) append(buf []byte) []byte {
 
 	l := len(buf)
 	if c.Width != 0 {
-		buf = append(buf, 'w', '=')
+		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
 		buf = append(buf, ',')
 	}
 	if c.Height != 0 {
-		buf = append(buf, 'h', '=')
+		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(c.Height), 10)
 		buf = append(buf, ',')
 	}
 	if c.DisableEnlarge {
-		buf = append(buf, 'u', '=', '0', ',')
+		buf = append(buf, "u=0,"...)
 	}
 	if c.AspectMode != AspectModeDefault {
-		buf = append(buf, 'a', '=')
+		buf = append(buf, "a="...)
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
 		buf = append(buf, ',')
 	}
 	if c.DevicePixelRatio != 0 {
-		buf = append(buf, 'd', 'p', 'r', '=')
+		buf = append(buf, "dpr="...)
 		buf = strconv.AppendFloat(buf, c.DevicePixelRatio, 'f', -1, 64)
 		buf = append(buf, ',')
 	}
@@ -650,23 +789,26 @@ func (c *Config) append(buf []byte) []byte {
 	}
 
 	if c.Origin != OriginDefault {
-		buf = append(buf, 'g', '=')
+		buf = append(buf, "g="...)
 		buf = strconv.AppendInt(buf, int64(c.Origin), 10)
 		buf = append(buf, ',')
 	}
 	if c.Background != nil {
-		r, g, b, a := c.Background.RGBA()
-		if a == 0xffff {
-			buf = append(buf, 'b', '=')
-			buf = appendByte(buf, byte(r>>8))
-			buf = appendByte(buf, byte(g>>8))
-			buf = appendByte(buf, byte(b>>8))
+		b := color.NRGBAModel.Convert(c.Background).(color.NRGBA)
+		if b.A == 0xff {
+			// opaque background
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
 			buf = append(buf, ',')
-		} else if a == 0 {
-			buf = append(buf, "b=000000,"...)
 		} else {
-			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
-			buf = append(buf, c...)
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
+			buf = appendByte(buf, b.A)
+			buf = append(buf, ',')
 		}
 	}
 
@@ -971,4 +1113,425 @@ func (o Overlay) append(buf []byte) []byte {
 	buf = append(buf, "%2F"...)
 	buf = append(buf, url.QueryEscape(o.URL)...)
 	return buf
+}
+
+func ParseConfig(s string) (config *Config, rest string, err error) {
+	state := parseState{
+		s:      s,
+		config: &Config{},
+	}
+	for {
+		key := state.getKey()
+		if key == "" {
+			break
+		}
+		if !state.skipEqual() {
+			return nil, "", fmt.Errorf("imageflux: missing '=' after key %q", key)
+		}
+		value := state.getValue()
+		state.skipComma()
+		if err := state.setValue(key, value); err != nil {
+			return nil, "", err
+		}
+	}
+	return state.config, state.rest(), nil
+}
+
+type parseState struct {
+	s      string
+	idx    int
+	config *Config
+}
+
+func (s *parseState) setValue(key, value string) error {
+	var zr image.Rectangle
+
+	switch key {
+	// Width
+	case "w":
+		w, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid width %q", value)
+		}
+		s.config.Width = w
+
+	// Height
+	case "h":
+		h, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid height %q", value)
+		}
+		s.config.Height = h
+
+	// DisableEnlarge
+	case "u":
+		switch value {
+		case "0":
+			s.config.DisableEnlarge = true
+		case "1":
+			s.config.DisableEnlarge = false
+		default:
+			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
+		}
+
+	// AspectMode
+	case "a":
+		a, err := strconv.Atoi(value)
+		if err != nil || a < 0 || AspectMode(a+1) >= aspectModeMax {
+			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
+		}
+		s.config.AspectMode = AspectMode(a + 1)
+
+	// DevicePixelRatio
+	case "dpr":
+		dpr, err := strconv.ParseFloat(value, 64)
+		if err != nil || dpr <= 0 || math.IsNaN(dpr) {
+			return fmt.Errorf("imageflux: invalid device pixel ratio %q", value)
+		}
+		s.config.DevicePixelRatio = dpr
+
+	// InputClip
+	case "ic":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
+		ic := image.Rect(minX, minY, maxX, maxY)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ic == zr {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		s.config.InputClip = ic
+
+	// InputClipRatio
+	case "icr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		icr := image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || icr == zr {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		s.config.InputClipRatio = icr
+		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// InputOrigin
+	case "ig":
+		ig, err := strconv.Atoi(value)
+		if err != nil || ig < 0 || Origin(ig) >= originMax {
+			return fmt.Errorf("imageflux: invalid input origin %q", value)
+		}
+		s.config.InputOrigin = Origin(ig)
+
+	// OutputClip
+	case "oc", "c":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
+		oc := image.Rect(minX, minY, maxX, maxY)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || oc == zr {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		s.config.OutputClip = oc
+
+	// OutputClipRatio
+	case "ocr", "cr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		ocr := image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ocr == zr {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		s.config.OutputClipRatio = ocr
+		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// OutputOrigin
+	case "og":
+		og, err := strconv.Atoi(value)
+		if err != nil || og < 0 || Origin(og) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		}
+		s.config.OutputOrigin = Origin(og)
+
+	// Origin
+	case "g":
+		g, err := strconv.Atoi(value)
+		if err != nil || g < 0 || Origin(g) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		}
+		s.config.Origin = Origin(g)
+
+	// Background
+	case "b":
+		if len(value) == 6 {
+			rgb, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.config.Background = color.NRGBA{
+				R: uint8(rgb >> 16),
+				G: uint8(rgb >> 8),
+				B: uint8(rgb),
+				A: 0xff,
+			}
+		} else if len(value) == 8 {
+			rgba, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.config.Background = color.NRGBA{
+				R: uint8(rgba >> 24),
+				G: uint8(rgba >> 16),
+				B: uint8(rgba >> 8),
+				A: uint8(rgba),
+			}
+		} else {
+			return fmt.Errorf("imageflux: invalid background %q", value)
+		}
+
+	// InputRotate
+	case "ir":
+		if value == "auto" {
+			s.config.InputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid input rotate %q", value)
+			}
+			s.config.InputRotate = Rotate(ir)
+		}
+
+	// OutputRotate
+	case "or", "r":
+		if value == "auto" {
+			s.config.OutputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid output rotate %q", value)
+			}
+			s.config.OutputRotate = Rotate(ir)
+		}
+
+	// Through
+	case "through":
+		t, err := parseThrough(value)
+		if err != nil {
+			return err
+		}
+		s.config.Through = t
+
+	// TODO: Overlays
+
+	// Format
+	case "f":
+		s.config.Format = Format(value)
+
+	// Quality
+	case "q":
+		q, err := strconv.Atoi(value)
+		if err != nil || q < 0 || q > 100 {
+			return fmt.Errorf("imageflux: invalid quality %q", value)
+		}
+		s.config.Quality = q
+
+	// DisableOptimization
+	case "o":
+		switch value {
+		case "0":
+			s.config.DisableOptimization = true
+		case "1":
+			s.config.DisableOptimization = false
+		default:
+			return fmt.Errorf("imageflux: invalid optimization %q", value)
+		}
+
+	// Lossless
+	case "lossless":
+		switch value {
+		case "0":
+			s.config.Lossless = false
+		case "1":
+			s.config.Lossless = true
+		default:
+			return fmt.Errorf("imageflux: invalid lossless %q", value)
+		}
+
+	// ExifOption
+	case "s":
+		v, err := strconv.Atoi(value)
+		if err != nil || ExifOption(v) < exifOptionMin || ExifOption(v) >= exifOptionMax {
+			return fmt.Errorf("imageflux: invalid exif option %q", value)
+		}
+		s.config.ExifOption = ExifOption(v)
+
+	// Unsharp
+	case "unsharp":
+		unsharp, err := parseUnsharp(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid unsharp %q", value)
+		}
+		s.config.Unsharp = unsharp
+
+	// Blur
+	case "blur":
+		blur, err := parseBlur(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid blur %q", value)
+		}
+		s.config.Blur = blur
+
+	// GrayScale
+	case "grayscale":
+		grayscale, err := strconv.Atoi(value)
+		if err != nil || grayscale < 0 || grayscale > 100 {
+			return fmt.Errorf("imageflux: invalid grayscale %q", value)
+		}
+		s.config.GrayScale = grayscale
+
+	// Sepia
+	case "sepia":
+		sepia, err := strconv.Atoi(value)
+		if err != nil || sepia < 0 || sepia > 100 {
+			return fmt.Errorf("imageflux: invalid sepia %q", value)
+		}
+		s.config.Sepia = sepia
+
+	// Brightness
+	case "brightness":
+		brightness, err := strconv.Atoi(value)
+		if err != nil || brightness < 0 {
+			return fmt.Errorf("imageflux: invalid brightness %q", value)
+		}
+		s.config.Brightness = brightness - 100
+
+	// Contrast
+	case "contrast":
+		contrast, err := strconv.Atoi(value)
+		if err != nil || contrast < 0 {
+			return fmt.Errorf("imageflux: invalid contrast %q", value)
+		}
+		s.config.Contrast = contrast - 100
+
+	// Invert
+	case "invert":
+		switch value {
+		case "0":
+			s.config.Invert = false
+		case "1":
+			s.config.Invert = true
+		default:
+			return fmt.Errorf("imageflux: invalid invert %q", value)
+		}
+	}
+	return nil
+}
+
+// getKey returns the key at the current index and advances the index.
+func (s *parseState) getKey() string {
+	i := s.idx
+	for i < len(s.s) {
+		if s.s[i] == '=' || s.s[i] == '/' {
+			break
+		}
+		i++
+	}
+	key := s.s[s.idx:i]
+	s.idx = i
+	return key
+}
+
+// skipEqual skips the '=' at the current index and returns true if it was found.
+func (s *parseState) skipEqual() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == '=' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+// getValue returns the value at the current index and advances the index.
+func (s *parseState) getValue() string {
+	var nest int
+	i := s.idx
+LOOP:
+	for i < len(s.s) {
+		switch s.s[i] {
+		case '(':
+			nest++
+		case ')':
+			nest--
+		case ',', '/':
+			if nest == 0 {
+				break LOOP
+			}
+		}
+		i++
+	}
+	value := s.s[s.idx:i]
+	s.idx = i
+	return value
+}
+
+// skipComma skips the ',' at the current index and returns true if it was found.
+func (s *parseState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+func (s *parseState) rest() string {
+	return s.s[s.idx:]
+}
+
+func split4(s string) (a, b, c, d string, ok bool) {
+	idx1 := strings.IndexByte(s, ':')
+	if idx1 < 0 {
+		return
+	}
+	idx2 := strings.IndexByte(s[idx1+1:], ':')
+	if idx2 < 0 {
+		return
+	}
+	idx3 := strings.IndexByte(s[idx1+idx2+2:], ':')
+	if idx3 < 0 {
+		return
+	}
+	a = s[:idx1]
+	b = s[idx1+1 : idx1+idx2+1]
+	c = s[idx1+idx2+2 : idx1+idx2+idx3+2]
+	d = s[idx1+idx2+idx3+3:]
+	ok = true
+	return
 }

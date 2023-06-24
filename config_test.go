@@ -3,6 +3,7 @@ package imageflux
 import (
 	"image"
 	"image/color"
+	"reflect"
 	"testing"
 )
 
@@ -228,13 +229,13 @@ func TestConfig(t *testing.T) {
 			config: &Config{
 				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 0},
 			},
-			output: "b=000000",
+			output: "b=ffffff00",
 		},
 		{
 			config: &Config{
-				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 128},
+				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 128},
 			},
-			output: "b=00000080",
+			output: "b=ffffff80",
 		},
 
 		// rotation
@@ -305,6 +306,12 @@ func TestConfig(t *testing.T) {
 				Through: ThroughJPEG | ThroughPNG | ThroughGIF,
 			},
 			output: "through=jpg:png:gif",
+		},
+		{
+			config: &Config{
+				Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+			},
+			output: "through=jpg:png:gif:webp",
 		},
 
 		// overlays
@@ -382,7 +389,7 @@ func TestConfig(t *testing.T) {
 		// output format
 		{
 			config: &Config{
-				Format: FormatWebPFromPNG,
+				Format: FormatWebPPNG,
 			},
 			output: "f=webp:png",
 		},
@@ -476,6 +483,353 @@ func TestConfig(t *testing.T) {
 	for _, c := range cases {
 		if got := c.config.String(); got != c.output {
 			t.Errorf("%#v: want %q, got %q", c.config, c.output, got)
+		}
+	}
+}
+
+func TestParseConfig(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *Config
+		rest  string
+	}{
+		{
+			input: "",
+			want:  &Config{},
+		},
+		{
+			input: "w=100",
+			want: &Config{
+				Width: 100,
+			},
+		},
+		{
+			input: "w=100,h=200",
+			want: &Config{
+				Width:  100,
+				Height: 200,
+			},
+		},
+		{
+			input: "a=3",
+			want: &Config{
+				AspectMode: AspectModePad,
+			},
+		},
+		{
+			input: "dpr=5",
+			want: &Config{
+				DevicePixelRatio: 5,
+			},
+		},
+
+		// clipping parameters
+		{
+			input: "ic=100:150:200:250",
+			want: &Config{
+				InputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
+		{
+			input: "icr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				InputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:        image.Pt(100, 100),
+			},
+		},
+		{
+			input: "ic=100:150:200:250,ig=5",
+			want: &Config{
+				InputClip:   image.Rect(100, 150, 200, 250),
+				InputOrigin: OriginMiddleCenter,
+			},
+		},
+		{
+			input: "oc=100:150:200:250",
+			want: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
+		{
+			// for backward compatibility, you can use "c" instead of "oc".
+			input: "c=100:150:200:250",
+			want: &Config{
+				OutputClip: image.Rect(100, 150, 200, 250),
+			},
+		},
+		{
+			input: "ocr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+		},
+		{
+			// for backward compatibility, you can use "cr" instead of "ocr".
+			input: "cr=0.25:0.25:0.75:0.75",
+			want: &Config{
+				OutputClipRatio: image.Rect(25, 25, 75, 75),
+				ClipMax:         image.Pt(100, 100),
+			},
+		},
+		{
+			input: "oc=100:150:200:250,og=5",
+			want: &Config{
+				OutputClip:   image.Rect(100, 150, 200, 250),
+				OutputOrigin: OriginMiddleCenter,
+			},
+		},
+
+		{
+			input: "g=1",
+			want: &Config{
+				Origin: OriginTopLeft,
+			},
+		},
+		{
+			input: "b=000000",
+			want: &Config{
+				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 0xff},
+			},
+		},
+		{
+			input: "b=ffffff",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=FFFFFF",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=ff0000",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0, B: 0, A: 0xff},
+			},
+		},
+		{
+			input: "b=00ff00",
+			want: &Config{
+				Background: color.NRGBA{R: 0, G: 0xff, B: 0, A: 0xff},
+			},
+		},
+		{
+			input: "b=0000ff",
+			want: &Config{
+				Background: color.NRGBA{R: 0, G: 0, B: 0xff, A: 0xff},
+			},
+		},
+		{
+			input: "b=ffffff00",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00},
+			},
+		},
+		{
+			input: "b=ffffff80",
+			want: &Config{
+				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x80},
+			},
+		},
+
+		// rotation
+		{
+			input: "ir=8",
+			want: &Config{
+				InputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			input: "ir=auto",
+			want: &Config{
+				InputRotate: RotateAuto,
+			},
+		},
+		{
+			input: "or=8",
+			want: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			input: "or=auto",
+			want: &Config{
+				OutputRotate: RotateAuto,
+			},
+		},
+		{
+			// for backward compatibility,
+			// you can use "r" instead of "or".
+			input: "r=8",
+			want: &Config{
+				OutputRotate: RotateLeftBottom,
+			},
+		},
+		{
+			// for backward compatibility,
+			// you can use "r" instead of "or".
+			input: "r=auto",
+			want: &Config{
+				OutputRotate: RotateAuto,
+			},
+		},
+
+		{
+			input: "through=jpg",
+			want: &Config{
+				Through: ThroughJPEG,
+			},
+		},
+		{
+			input: "through=webp:gif:png:jpg",
+			want: &Config{
+				Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+			},
+		},
+
+		// output format
+		{
+			input: "f=webp:png",
+			want: &Config{
+				Format: FormatWebPPNG,
+			},
+		},
+		{
+			input: "q=75",
+			want: &Config{
+				Quality: 75,
+			},
+		},
+		{
+			input: "o=0",
+			want: &Config{
+				DisableOptimization: true,
+			},
+		},
+		{
+			input: "lossless=1",
+			want: &Config{
+				Lossless: true,
+			},
+		},
+		{
+			input: "s=2",
+			want: &Config{
+				ExifOption: ExifOptionKeepOrientation,
+			},
+		},
+
+		// image filters
+		{
+			input: "unsharp=10x1",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+		},
+		{
+			input: "unsharp=10x1+1+0.5",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius:    10,
+					Sigma:     1.0,
+					Gain:      1.0,
+					Threshold: 0.5,
+				},
+			},
+		},
+		{
+			input: "unsharp=1x1+0+.1",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius:    1,
+					Sigma:     1.0,
+					Gain:      0.0,
+					Threshold: .1,
+				},
+			},
+		},
+		{
+			input: "blur=10x1",
+			want: &Config{
+				Blur: Blur{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+		},
+		{
+			input: "grayscale=0",
+			want: &Config{
+				GrayScale: 0,
+			},
+		},
+		{
+			input: "grayscale=100",
+			want: &Config{
+				GrayScale: 100,
+			},
+		},
+		{
+			input: "sepia=0",
+			want: &Config{
+				Sepia: 0,
+			},
+		},
+		{
+			input: "sepia=100",
+			want: &Config{
+				Sepia: 100,
+			},
+		},
+		{
+			input: "brightness=0",
+			want: &Config{
+				Brightness: -100,
+			},
+		},
+		{
+			input: "brightness=200",
+			want: &Config{
+				Brightness: 100,
+			},
+		},
+		{
+			input: "contrast=0",
+			want: &Config{
+				Contrast: -100,
+			},
+		},
+		{
+			input: "contrast=200",
+			want: &Config{
+				Contrast: 100,
+			},
+		},
+		{
+			input: "invert=1",
+			want: &Config{
+				Invert: true,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		got, rest, err := ParseConfig(c.input)
+		if err != nil {
+			t.Errorf("%q: unexpected error: %s", c.input, err)
+			continue
+		}
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%q: want %#v, got %#v", c.input, c.want, got)
+		}
+		if rest != c.rest {
+			t.Errorf("%q: want %q, got %q", c.input, c.rest, rest)
 		}
 	}
 }
