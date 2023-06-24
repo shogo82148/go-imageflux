@@ -97,3 +97,50 @@ func TestProxy_Parse(t *testing.T) {
 		}
 	}
 }
+
+// test signature validation errors
+func TestProxy_Parse_sig_error(t *testing.T) {
+	fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
+	cases := []struct {
+		input     string
+		signature string
+		proxy     *Proxy
+	}{
+		{
+			// signature mismatch
+			input: "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+		},
+		{
+			// invalid signature version
+			input: "/c/sig=Z.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+		},
+		{
+			// base64 decode error
+			input: "/c/sig=1.A/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+		},
+		{
+			input:     "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
+			signature: "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		_, err := c.proxy.Parse(c.input, c.signature)
+		if err != ErrInvalidSignature {
+			t.Errorf("%q: want ErrInvalidSignature, got %v", c.input, err)
+		}
+	}
+}
