@@ -506,6 +506,35 @@ func TestOverlay(t *testing.T) {
 	}{
 		{
 			overlay: &Overlay{
+				Width:  100,
+				Height: 200,
+				URL:    "images/1.png",
+			},
+			output: "w=100,h=200%2Fimages%2F1.png",
+		},
+		{
+			overlay: &Overlay{
+				DisableEnlarge: true,
+				URL:            "images/1.png",
+			},
+			output: "u=0%2Fimages%2F1.png",
+		},
+		{
+			overlay: &Overlay{
+				AspectMode: AspectModeScale,
+				URL:        "images/1.png",
+			},
+			output: "a=0%2Fimages%2F1.png",
+		},
+		{
+			overlay: &Overlay{
+				InputClip: image.Rect(100, 200, 300, 400),
+				URL:       "images/1.png",
+			},
+			output: "ic=100:200:300:400%2Fimages%2F1.png",
+		},
+		{
+			overlay: &Overlay{
 				Background: color.Black,
 				URL:        "images/1.png",
 			},
