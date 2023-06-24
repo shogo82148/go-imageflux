@@ -68,8 +68,17 @@ func FuzzParseConfig(f *testing.F) {
 			t.Error(err)
 			return
 		}
+
+		// The zero value of Format has same meaning as FormatAuto.
+		if c0.Format == "" {
+			c0.Format = FormatAuto
+		}
+		if c1.Format == "" {
+			c1.Format = FormatAuto
+		}
+
 		if !reflect.DeepEqual(c0, c1) {
-			t.Errorf("c0 != c1: %v != %v", c0, c1)
+			t.Errorf("%q: c0 != c1: %v != %v", s, c0, c1)
 		}
 	})
 }
