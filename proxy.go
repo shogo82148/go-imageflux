@@ -17,7 +17,33 @@ func (p *Proxy) Image(path string, config *Config) *Image {
 	}
 }
 
-// ParsePath parses the path and returns the image.
-func (p *Proxy) ParsePath(path string, signature string) (*Image, error) {
-	return &Image{}, nil
+// Parse parses the path and returns the image.
+func (p *Proxy) Parse(path string, signature string) (*Image, error) {
+	state := parseState{
+		s:         path,
+		config:    &Config{},
+		signature: signature,
+	}
+
+	if p.Secret == "" {
+		c, rest, err := state.parseConfig()
+		if err != nil {
+			return nil, err
+		}
+		return &Image{
+			Proxy:  p,
+			Path:   rest,
+			Config: c,
+		}, nil
+	}
+
+	c, rest, err := state.parseConfigAndVerifySignature([]byte(p.Secret))
+	if err != nil {
+		return nil, err
+	}
+	return &Image{
+		Proxy:  p,
+		Path:   rest,
+		Config: c,
+	}, nil
 }

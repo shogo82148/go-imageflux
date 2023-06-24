@@ -1,6 +1,9 @@
 package imageflux
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
@@ -19,6 +22,9 @@ var nowFunc = time.Now
 
 // ErrExpired is returned when the image is expired.
 var ErrExpired = errors.New("imageflux: expired")
+
+// ErrInvalidSignature is returned when the signature is invalid.
+var ErrInvalidSignature = errors.New("imageflux: invalid signature")
 
 // Config is configure of image.
 type Config struct {
@@ -1137,6 +1143,9 @@ type parseState struct {
 	s      string
 	idx    int
 	config *Config
+
+	// the signature that the user provided.
+	signature string
 }
 
 func (s *parseState) parseConfig() (*Config, string, error) {
@@ -1158,7 +1167,80 @@ func (s *parseState) parseConfig() (*Config, string, error) {
 			return nil, "", err
 		}
 	}
+
 	return s.config, s.rest(), nil
+}
+
+func (s *parseState) parseConfigAndVerifySignature(secret []byte) (*Config, string, error) {
+	if !s.hasParameter() {
+		buf := []byte(s.s)
+		if err := s.verifySignature(secret, buf); err != nil {
+			return nil, "", err
+		}
+		return s.config, s.rest(), nil
+	}
+
+	buf := make([]byte, 0, len(s.s))
+	if len(s.s) == 0 || s.s[0] != '/' {
+		buf = append(buf, '/')
+	}
+	buf = append(buf, s.s[:s.idx]...)
+
+	for {
+		key := s.getKey()
+		if key == "" {
+			break
+		}
+		if !s.skipEqual() {
+			return nil, "", fmt.Errorf("imageflux: missing '=' after key %q", key)
+		}
+		value := s.getValue()
+		s.skipComma()
+		if err := s.setValue(key, value); err != nil {
+			return nil, "", err
+		}
+
+		if key != "sig" {
+			buf = append(buf, key...)
+			buf = append(buf, '=')
+			buf = append(buf, value...)
+			buf = append(buf, ',')
+		}
+	}
+
+	// remove trailing comma
+	if len(buf) > 0 && buf[len(buf)-1] == ',' {
+		buf = buf[:len(buf)-1]
+	} else {
+		buf = buf[:0]
+	}
+	buf = append(buf, s.rest()...)
+
+	if err := s.verifySignature(secret, buf); err != nil {
+		return nil, "", err
+	}
+
+	return s.config, s.rest(), nil
+}
+
+func (s *parseState) verifySignature(secret, data []byte) error {
+	if strings.HasPrefix(s.signature, "1.") {
+		// signature version 1
+		sig, err := base64.URLEncoding.DecodeString(s.signature[len("1."):])
+		if err != nil {
+			return ErrInvalidSignature
+		}
+
+		w := hmac.New(sha256.New, secret)
+		w.Write(data) // hash.hash never returns an error, so no need to check errors.
+		sum := w.Sum(nil)
+
+		if !hmac.Equal(sig, sum) {
+			return ErrInvalidSignature
+		}
+		return nil
+	}
+	return ErrInvalidSignature
 }
 
 func (s *parseState) hasParameter() bool {
@@ -1518,6 +1600,12 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		if !expires.Before(nowFunc()) {
 			return ErrExpired
+		}
+
+	case "sig":
+		// if signature is already set, ignore this
+		if s.signature == "" {
+			s.signature = value
 		}
 	}
 	return nil
