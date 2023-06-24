@@ -45,6 +45,7 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("s=2")
 	f.Add("unsharp=10x1")
 	f.Add("unsharp=10x1+1+0.5")
+	f.Add("blur=10x1")
 	f.Add("grayscale=0")
 	f.Add("grayscale=100")
 	f.Add("sepia=0")
