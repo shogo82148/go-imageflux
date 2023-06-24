@@ -836,6 +836,45 @@ func TestParseConfig(t *testing.T) {
 			input: "expires=2023-06-24T09:22:59Z",
 			want:  &Config{},
 		},
+
+		{
+			input: "/images/1.jpg",
+			want:  &Config{},
+			rest:  "/images/1.jpg",
+		},
+		{
+			input: "images/1.jpg",
+			want:  &Config{},
+			rest:  "images/1.jpg",
+		},
+		{
+			input: "w=100/images/1.jpg",
+			want: &Config{
+				Width: 100,
+			},
+			rest: "/images/1.jpg",
+		},
+		{
+			input: "/w=100/images/1.jpg",
+			want: &Config{
+				Width: 100,
+			},
+			rest: "/images/1.jpg",
+		},
+		{
+			input: "/c/w=100/images/1.jpg",
+			want: &Config{
+				Width: 100,
+			},
+			rest: "/images/1.jpg",
+		},
+		{
+			input: "/c!/w=100/images/1.jpg",
+			want: &Config{
+				Width: 100,
+			},
+			rest: "/images/1.jpg",
+		},
 	}
 
 	for _, c := range cases {

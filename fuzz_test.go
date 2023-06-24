@@ -57,6 +57,12 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("contrast=200")
 	f.Add("invert=1")
 	f.Add("expires=2023-06-24T09:22:59Z")
+	f.Add("/images/1.jpg")
+	f.Add("images/1.jpg")
+	f.Add("w=100/images/1.jpg")
+	f.Add("/w=100/images/1.jpg")
+	f.Add("/c/w=100/images/1.jpg")
+	f.Add("/c!/w=100/images/1.jpg")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))

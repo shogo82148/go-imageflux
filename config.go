@@ -1130,27 +1130,75 @@ func ParseConfig(s string) (config *Config, rest string, err error) {
 		s:      s,
 		config: &Config{},
 	}
-	for {
-		key := state.getKey()
-		if key == "" {
-			break
-		}
-		if !state.skipEqual() {
-			return nil, "", fmt.Errorf("imageflux: missing '=' after key %q", key)
-		}
-		value := state.getValue()
-		state.skipComma()
-		if err := state.setValue(key, value); err != nil {
-			return nil, "", err
-		}
-	}
-	return state.config, state.rest(), nil
+	return state.parseConfig()
 }
 
 type parseState struct {
 	s      string
 	idx    int
 	config *Config
+}
+
+func (s *parseState) parseConfig() (*Config, string, error) {
+	if !s.hasParameter() {
+		return s.config, s.rest(), nil
+	}
+
+	for {
+		key := s.getKey()
+		if key == "" {
+			break
+		}
+		if !s.skipEqual() {
+			return nil, "", fmt.Errorf("imageflux: missing '=' after key %q", key)
+		}
+		value := s.getValue()
+		s.skipComma()
+		if err := s.setValue(key, value); err != nil {
+			return nil, "", err
+		}
+	}
+	return s.config, s.rest(), nil
+}
+
+func (s *parseState) hasParameter() bool {
+	i := s.idx
+	if i >= len(s.s) {
+		return false
+	}
+
+	// skip leading slash
+	if s.s[i] == '/' {
+		i++
+	}
+
+	// parameters may start with 'c/' or 'c!/'.
+	if strings.HasPrefix(s.s[i:], "c/") {
+		s.idx = i + len("c/")
+		return true
+	}
+	if strings.HasPrefix(s.s[i:], "c!/") {
+		s.idx += i + len("c!/")
+		return true
+	}
+
+	// guess whether the string has parameters.
+	// parameters always have '=', so we search for it.
+	for ; i < len(s.s); i++ {
+		if s.s[i] == '/' {
+			// we didn't find any parameter.
+			return false
+		}
+
+		if s.s[i] == '=' {
+			// we might find a parameter.
+			if s.s[s.idx] == '/' {
+				s.idx++
+			}
+			return true
+		}
+	}
+	return false
 }
 
 func (s *parseState) setValue(key, value string) error {

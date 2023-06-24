@@ -2,7 +2,9 @@ package imageflux
 
 // Proxy is a proxy of ImageFlux.
 type Proxy struct {
-	Host   string
+	Host string
+
+	// Secret is signing secret.
 	Secret string
 }
 
@@ -13,4 +15,9 @@ func (p *Proxy) Image(path string, config *Config) *Image {
 		Path:   path,
 		Config: config,
 	}
+}
+
+// ParsePath parses the path and returns the image.
+func (p *Proxy) ParsePath(path string, signature string) (*Image, error) {
+	return &Image{}, nil
 }
