@@ -1071,19 +1071,21 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 	if o.Background != nil {
-		r, g, b, a := o.Background.RGBA()
-		if a == 0xffff {
-			buf = append(buf, 'b', '=')
-			buf = appendByte(buf, byte(r>>8))
-			buf = appendByte(buf, byte(g>>8))
-			buf = appendByte(buf, byte(b>>8))
-			buf = appendComma(buf, escapeComma)
-		} else if a == 0 {
-			buf = append(buf, "b=000000"...)
+		b := color.NRGBAModel.Convert(o.Background).(color.NRGBA)
+		if b.A == 0xff {
+			// opaque background
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
 			buf = appendComma(buf, escapeComma)
 		} else {
-			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
-			buf = append(buf, c...)
+			buf = append(buf, "b="...)
+			buf = appendByte(buf, b.R)
+			buf = appendByte(buf, b.G)
+			buf = appendByte(buf, b.B)
+			buf = appendByte(buf, b.A)
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 
