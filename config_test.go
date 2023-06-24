@@ -1,11 +1,23 @@
 package imageflux
 
 import (
+	"errors"
 	"image"
 	"image/color"
 	"reflect"
 	"testing"
+	"time"
 )
+
+func fixTime(t *testing.T, now time.Time) {
+	t.Helper()
+	nowFunc = func() time.Time {
+		return now
+	}
+	t.Cleanup(func() {
+		nowFunc = time.Now
+	})
+}
 
 func BenchmarkConfig(b *testing.B) {
 	config := &Config{
@@ -67,11 +79,11 @@ func TestConfig(t *testing.T) {
 	}{
 		{
 			config: nil,
-			output: "",
+			output: "f=auto",
 		},
 		{
 			config: &Config{},
-			output: "",
+			output: "f=auto",
 		},
 		{
 			config: &Config{
@@ -488,6 +500,8 @@ func TestConfig(t *testing.T) {
 }
 
 func TestParseConfig(t *testing.T) {
+	fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
 	cases := []struct {
 		input string
 		want  *Config
@@ -817,6 +831,11 @@ func TestParseConfig(t *testing.T) {
 				Invert: true,
 			},
 		},
+
+		{
+			input: "expires=2023-06-24T09:22:59Z",
+			want:  &Config{},
+		},
 	}
 
 	for _, c := range cases {
@@ -831,5 +850,14 @@ func TestParseConfig(t *testing.T) {
 		if rest != c.rest {
 			t.Errorf("%q: want %q, got %q", c.input, c.rest, rest)
 		}
+	}
+}
+
+func TestParseConfig_expired(t *testing.T) {
+	fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
+	_, _, err := ParseConfig("expires=2023-06-24T09:23:00Z")
+	if !errors.Is(err, ErrExpired) {
+		t.Errorf("want ErrExpired, got %s", err)
 	}
 }

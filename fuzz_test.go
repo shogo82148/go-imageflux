@@ -6,6 +6,7 @@ package imageflux
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func FuzzParseConfig(f *testing.F) {
@@ -55,8 +56,11 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("contrast=0")
 	f.Add("contrast=200")
 	f.Add("invert=1")
+	f.Add("expires=2023-06-24T09:22:59Z")
 
 	f.Fuzz(func(t *testing.T, s string) {
+		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
 		c0, rest, err := ParseConfig(s)
 		if err != nil {
 			return
@@ -68,8 +72,17 @@ func FuzzParseConfig(f *testing.F) {
 			t.Error(err)
 			return
 		}
+
+		// The zero value of Format has same meaning as FormatAuto.
+		if c0.Format == "" {
+			c0.Format = FormatAuto
+		}
+		if c1.Format == "" {
+			c1.Format = FormatAuto
+		}
+
 		if !reflect.DeepEqual(c0, c1) {
-			t.Errorf("c0 != c1: %v != %v", c0, c1)
+			t.Errorf("%q: c0 != c1: %v != %v", s, c0, c1)
 		}
 	})
 }
