@@ -64,6 +64,8 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("/w=100/images/1.jpg")
 	f.Add("/c/w=100/images/1.jpg")
 	f.Add("/c!/w=100/images/1.jpg")
+	f.Add("w=100%2ch=200")
+	f.Add("w=100%2Ch=200")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
@@ -98,6 +100,8 @@ func FuzzProxy_Parse(f *testing.F) {
 	f.Add("/c!/w=100/images/1.jpg", "", "")
 	f.Add("/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg", "", "testsigningsecret")
 	f.Add("/c/w=200,sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200%2csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200%2Csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
 	f.Add("/c/w=200/images/1.jpg", "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=", "testsigningsecret")
 	f.Add("/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg", "", "testsigningsecret")
 	f.Add("/images/1.jpg", "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=", "testsigningsecret")
