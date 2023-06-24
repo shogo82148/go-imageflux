@@ -695,13 +695,13 @@ func (c *Config) String() string {
 		return "f=auto"
 	}
 	buf := bufPool.Get().(*[]byte)
-	*buf = c.append((*buf)[:0])
+	*buf = c.append((*buf)[:0], false)
 	str := string(*buf)
 	bufPool.Put(buf)
 	return str
 }
 
-func (c *Config) append(buf []byte) []byte {
+func (c *Config) append(buf []byte, escapeComma bool) []byte {
 	var zr image.Rectangle
 	var zp image.Point
 	if c == nil {
@@ -713,12 +713,12 @@ func (c *Config) append(buf []byte) []byte {
 	if c.Width != 0 {
 		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(c.Width), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Height != 0 {
 		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(c.Height), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableEnlarge {
 		buf = append(buf, "u=0,"...)
@@ -726,12 +726,12 @@ func (c *Config) append(buf []byte) []byte {
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, "a="...)
 		buf = strconv.AppendInt(buf, int64(c.AspectMode-1), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.DevicePixelRatio != 0 {
 		buf = append(buf, "dpr="...)
 		buf = strconv.AppendFloat(buf, c.DevicePixelRatio, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	// clipping parameters
@@ -744,7 +744,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(ic.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(ic.Max.Y), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if cm, ic := c.ClipMax, c.InputClipRatio; cm != zp && ic != zr {
 		x1 := float64(ic.Min.X) / float64(cm.X)
@@ -759,12 +759,12 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if ig := c.InputOrigin; ig != OriginDefault {
 		buf = append(buf, "ig="...)
 		buf = strconv.AppendInt(buf, int64(ig), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c, oc := c.Clip, c.OutputClip; c != zr || oc != zr {
 		if oc == zr {
@@ -778,7 +778,7 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(oc.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(oc.Max.Y), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c, oc, cm := c.ClipRatio, c.OutputClipRatio, c.ClipMax; cm != zp && (c != zr || oc != zr) {
 		if oc == zr {
@@ -796,18 +796,18 @@ func (c *Config) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if og := c.OutputOrigin; og != OriginDefault {
 		buf = append(buf, "og="...)
 		buf = strconv.AppendInt(buf, int64(og), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	if c.Origin != OriginDefault {
 		buf = append(buf, "g="...)
 		buf = strconv.AppendInt(buf, int64(c.Origin), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Background != nil {
 		b := color.NRGBAModel.Convert(c.Background).(color.NRGBA)
@@ -817,14 +817,14 @@ func (c *Config) append(buf []byte) []byte {
 			buf = appendByte(buf, b.R)
 			buf = appendByte(buf, b.G)
 			buf = appendByte(buf, b.B)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		} else {
 			buf = append(buf, "b="...)
 			buf = appendByte(buf, b.R)
 			buf = appendByte(buf, b.G)
 			buf = appendByte(buf, b.B)
 			buf = appendByte(buf, b.A)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 
@@ -835,7 +835,7 @@ func (c *Config) append(buf []byte) []byte {
 		} else {
 			buf = append(buf, "ir="...)
 			buf = strconv.AppendInt(buf, int64(ir), 10)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 	if r, or := c.Rotate, c.OutputRotate; r != RotateDefault || or != RotateDefault {
@@ -847,20 +847,20 @@ func (c *Config) append(buf []byte) []byte {
 		} else {
 			buf = append(buf, "or="...)
 			buf = strconv.AppendInt(buf, int64(or), 10)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 
 	if c.Through != 0 {
 		buf = append(buf, "through="...)
 		buf = c.Through.append(buf)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	if len(c.Overlays) > 0 {
 		for _, overlay := range c.Overlays {
 			buf = append(buf, "l=("...)
-			buf = overlay.append(buf)
+			buf = overlay.append(buf, escapeComma)
 			buf = append(buf, "),"...)
 		}
 	}
@@ -869,12 +869,12 @@ func (c *Config) append(buf []byte) []byte {
 	if c.Format != "" {
 		buf = append(buf, "f="...)
 		buf = append(buf, c.Format...)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Quality != 0 {
 		buf = append(buf, "q="...)
 		buf = strconv.AppendInt(buf, int64(c.Quality), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableOptimization {
 		buf = append(buf, "o=0,"...)
@@ -885,39 +885,39 @@ func (c *Config) append(buf []byte) []byte {
 	if c.ExifOption != ExifOptionDefault {
 		buf = append(buf, "s="...)
 		buf = strconv.AppendInt(buf, int64(c.ExifOption), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	// image filters
 	if c.Unsharp.Radius != 0 {
 		buf = append(buf, "unsharp="...)
 		buf = c.Unsharp.append(buf)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Blur.Radius != 0 {
 		buf = append(buf, "blur="...)
 		buf = c.Blur.append(buf)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.GrayScale != 0 {
 		buf = append(buf, "grayscale="...)
 		buf = strconv.AppendInt(buf, int64(c.GrayScale), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Sepia != 0 {
 		buf = append(buf, "sepia="...)
 		buf = strconv.AppendInt(buf, int64(c.Sepia), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Brightness != 0 {
 		buf = append(buf, "brightness="...)
 		buf = strconv.AppendInt(buf, int64(c.Brightness+100), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Contrast != 0 {
 		buf = append(buf, "contrast="...)
 		buf = strconv.AppendInt(buf, int64(c.Contrast+100), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Invert {
 		buf = append(buf, "invert=1,"...)
@@ -932,6 +932,13 @@ func (c *Config) append(buf []byte) []byte {
 func appendByte(buf []byte, b byte) []byte {
 	const digits = "0123456789abcdef"
 	return append(buf, digits[b>>4], digits[b&0x0F])
+}
+
+func appendComma(buf []byte, escape bool) []byte {
+	if escape {
+		return append(buf, "%2C"...)
+	}
+	return append(buf, ',')
 }
 
 func (a AspectMode) String() string {
@@ -949,31 +956,31 @@ func (a AspectMode) String() string {
 }
 
 func (o Overlay) String() string {
-	return string(o.append([]byte{}))
+	return string(o.append([]byte{}, false))
 }
 
-func (o Overlay) append(buf []byte) []byte {
+func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 	var zr image.Rectangle
 	var zp image.Point
 
 	l := len(buf)
 	if o.Width != 0 {
-		buf = append(buf, 'w', '=')
+		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(o.Width), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.Height != 0 {
-		buf = append(buf, 'h', '=')
+		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(o.Height), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.DisableEnlarge {
-		buf = append(buf, 'u', '=', '0', ',')
+		buf = append(buf, "u=0,"...)
 	}
 	if o.AspectMode != AspectModeDefault {
-		buf = append(buf, 'a', '=')
+		buf = append(buf, "a="...)
 		buf = strconv.AppendInt(buf, int64(o.AspectMode-1), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	// clipping parameters
@@ -986,7 +993,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(ic.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(ic.Max.Y), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if cm, ic := o.ClipMax, o.InputClipRatio; cm != zp && ic != zr {
 		x1 := float64(ic.Min.X) / float64(cm.X)
@@ -1001,12 +1008,12 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if ig := o.InputOrigin; ig != OriginDefault {
 		buf = append(buf, "ig="...)
 		buf = strconv.AppendInt(buf, int64(ig), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c, oc := o.Clip, o.OutputClip; c != zr || oc != zr {
 		if oc == zr {
@@ -1020,7 +1027,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(oc.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(oc.Max.Y), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if c, oc, cm := o.ClipRatio, o.OutputClipRatio, o.ClipMax; cm != zp && (c != zr || oc != zr) {
 		if oc == zr {
@@ -1038,18 +1045,18 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if og := o.OutputOrigin; og != OriginDefault {
 		buf = append(buf, "og="...)
 		buf = strconv.AppendInt(buf, int64(og), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	if o.Origin != OriginDefault {
 		buf = append(buf, 'g', '=')
 		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.Background != nil {
 		r, g, b, a := o.Background.RGBA()
@@ -1058,7 +1065,7 @@ func (o Overlay) append(buf []byte) []byte {
 			buf = appendByte(buf, byte(r>>8))
 			buf = appendByte(buf, byte(g>>8))
 			buf = appendByte(buf, byte(b>>8))
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		} else if a == 0 {
 			buf = append(buf, "b=000000,"...)
 		} else {
@@ -1074,7 +1081,7 @@ func (o Overlay) append(buf []byte) []byte {
 		} else {
 			buf = append(buf, "ir="...)
 			buf = strconv.AppendInt(buf, int64(ir), 10)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 	if r, or := o.Rotate, o.OutputRotate; r != RotateDefault || or != RotateDefault {
@@ -1086,7 +1093,7 @@ func (o Overlay) append(buf []byte) []byte {
 		} else {
 			buf = append(buf, "or="...)
 			buf = strconv.AppendInt(buf, int64(or), 10)
-			buf = append(buf, ',')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 
@@ -1095,7 +1102,7 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
 		buf = append(buf, ",y="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.OffsetRatio != zp && o.OffsetMax != zp {
 		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
@@ -1104,12 +1111,12 @@ func (o Overlay) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
 		buf = append(buf, ",yr="...)
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.OverlayOrigin != OriginDefault {
 		buf = append(buf, "lg="...)
 		buf = strconv.AppendInt(buf, int64(o.OverlayOrigin), 10)
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	// mask
@@ -1120,7 +1127,7 @@ func (o Overlay) append(buf []byte) []byte {
 			buf = append(buf, ':')
 			buf = strconv.AppendInt(buf, int64(o.PaddingMode), 10)
 		}
-		buf = append(buf, ',')
+		buf = appendComma(buf, escapeComma)
 	}
 
 	if len(buf) > l {
@@ -1186,7 +1193,9 @@ func (s *parseState) parseConfigAndVerifySignature(secret []byte) (*Config, stri
 	}
 	buf = append(buf, s.s[:s.idx]...)
 
+	hasParam := false
 	for {
+		start := s.idx
 		key := s.getKey()
 		if key == "" {
 			break
@@ -1199,18 +1208,22 @@ func (s *parseState) parseConfigAndVerifySignature(secret []byte) (*Config, stri
 		if err := s.setValue(key, value); err != nil {
 			return nil, "", err
 		}
+		end := s.idx
 
 		if key != "sig" {
-			buf = append(buf, key...)
-			buf = append(buf, '=')
-			buf = append(buf, value...)
-			buf = append(buf, ',')
+			hasParam = true
+			buf = append(buf, s.s[start:end]...)
 		}
 	}
 
-	// remove trailing comma
-	if len(buf) > 0 && buf[len(buf)-1] == ',' {
-		buf = buf[:len(buf)-1]
+	if hasParam {
+		if len(buf) >= 1 && buf[len(buf)-1] == ',' {
+			buf = buf[:len(buf)-1]
+		} else if len(buf) >= 3 && string(buf[len(buf)-3:]) == "%2C" {
+			buf = buf[:len(buf)-3]
+		} else if len(buf) >= 3 && string(buf[len(buf)-3:]) == "%2c" {
+			buf = buf[:len(buf)-3]
+		}
 	} else {
 		buf = buf[:0]
 	}

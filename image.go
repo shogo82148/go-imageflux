@@ -36,24 +36,35 @@ type Image struct {
 
 // SignedURL returns the URL of the image with the signature.
 func (img *Image) SignedURL() string {
-	path, s := img.pathAndSign()
+	path, s := img.pathAndSign(false)
 	if s == "" {
 		return "https://" + img.Proxy.Host + path
 	}
 	return "https://" + img.Proxy.Host + "/c/sig=" + s + "," + strings.TrimPrefix(path, "/c/")
 }
 
+// SignedURLWithoutComma is same as SignedURL but
+// the url doesn't contain comma.
+// It is useful for srcset of HTML img tag.
+func (img *Image) SignedURLWithoutComma() string {
+	path, s := img.pathAndSign(true)
+	if s == "" {
+		return "https://" + img.Proxy.Host + path
+	}
+	return "https://" + img.Proxy.Host + "/c/sig=" + s + "%2C" + strings.TrimPrefix(path, "/c/")
+}
+
 // Sign returns the signature.
 func (img *Image) Sign() string {
-	_, s := img.pathAndSign()
+	_, s := img.pathAndSign(false)
 	return s
 }
 
-func (img *Image) pathAndSign() (string, string) {
+func (img *Image) pathAndSign(escapeComma bool) (string, string) {
 	pbuf := bufPool.Get().(*[]byte)
 	buf := (*pbuf)[:0]
 	buf = append(buf, "/c/"...)
-	buf = img.Config.append(buf)
+	buf = img.Config.append(buf, escapeComma)
 	if !img.Expires.IsZero() {
 		buf = append(buf, ",expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)
@@ -83,6 +94,7 @@ func (img *Image) pathAndSign() (string, string) {
 	return path, string(buf2[:])
 }
 
+// String returns the URL of the image without the signature.
 func (img *Image) String() string {
 	pbuf := bufPool.Get().(*[]byte)
 	buf := (*pbuf)[:0]
@@ -90,7 +102,7 @@ func (img *Image) String() string {
 	buf = append(buf, "https://"...)
 	buf = append(buf, img.Proxy.Host...)
 	buf = append(buf, "/c/"...)
-	buf = img.Config.append(buf)
+	buf = img.Config.append(buf, false)
 	if !img.Expires.IsZero() {
 		buf = append(buf, ",expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)

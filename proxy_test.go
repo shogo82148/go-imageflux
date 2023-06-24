@@ -43,6 +43,26 @@ func TestProxy_Parse(t *testing.T) {
 			path: "/images/1.jpg",
 		},
 		{
+			input: "/c/w=200%2csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+			want: &Config{
+				Width: 200,
+			},
+			path: "/images/1.jpg",
+		},
+		{
+			input: "/c/w=200%2Csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+			want: &Config{
+				Width: 200,
+			},
+			path: "/images/1.jpg",
+		},
+		{
 			input:     "/c/w=200/images/1.jpg",
 			signature: "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=",
 			proxy: &Proxy{
