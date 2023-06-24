@@ -116,6 +116,112 @@ func TestImage_SignedURL(t *testing.T) {
 	}
 }
 
+func TestImage_SignedURLWithoutComma(t *testing.T) {
+	cases := []struct {
+		image  *Image
+		output string
+	}{
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/images/1.jpg",
+			},
+			"https://demo.imageflux.jp/c/f=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=200/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width:  200,
+					Height: 200,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=200%2Ch=200/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "demo.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
+				Path: "/images/1.jpg",
+			},
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=%2Cf=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "demo.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
+				Path:   "/images/1.jpg",
+				Config: &Config{},
+			},
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=%2Cf=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "demo.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+			},
+			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path:    "/images/1.jpg",
+				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/f=auto%2Cexpires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "demo.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/sig=1.Aa05y5VnlhocCF-RABA2--P7-4kc8E9LqJ86BqGosqw=%2Cw=200%2Cexpires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.image.SignedURLWithoutComma(); got != c.output {
+			t.Errorf("want %s, got %s", c.output, got)
+		}
+	}
+}
+
 func TestImage_String(t *testing.T) {
 	cases := []struct {
 		image  *Image

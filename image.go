@@ -66,7 +66,8 @@ func (img *Image) pathAndSign(escapeComma bool) (string, string) {
 	buf = append(buf, "/c/"...)
 	buf = img.Config.append(buf, escapeComma)
 	if !img.Expires.IsZero() {
-		buf = append(buf, ",expires="...)
+		buf = appendComma(buf, escapeComma)
+		buf = append(buf, "expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)
 	}
 	if len(img.Path) == 0 || img.Path[0] != '/' {

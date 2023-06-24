@@ -721,7 +721,8 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableEnlarge {
-		buf = append(buf, "u=0,"...)
+		buf = append(buf, "u=0"...)
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.AspectMode != AspectModeDefault {
 		buf = append(buf, "a="...)
@@ -831,7 +832,8 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 	// rotation
 	if ir := c.InputRotate; ir != RotateDefault {
 		if ir == RotateAuto {
-			buf = append(buf, "ir=auto,"...)
+			buf = append(buf, "ir=auto"...)
+			buf = appendComma(buf, escapeComma)
 		} else {
 			buf = append(buf, "ir="...)
 			buf = strconv.AppendInt(buf, int64(ir), 10)
@@ -843,7 +845,8 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 			or = r
 		}
 		if or == RotateAuto {
-			buf = append(buf, "or=auto,"...)
+			buf = append(buf, "or=auto"...)
+			buf = appendComma(buf, escapeComma)
 		} else {
 			buf = append(buf, "or="...)
 			buf = strconv.AppendInt(buf, int64(or), 10)
@@ -861,7 +864,8 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 		for _, overlay := range c.Overlays {
 			buf = append(buf, "l=("...)
 			buf = overlay.append(buf, escapeComma)
-			buf = append(buf, "),"...)
+			buf = append(buf, ')')
+			buf = appendComma(buf, escapeComma)
 		}
 	}
 
@@ -877,10 +881,12 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableOptimization {
-		buf = append(buf, "o=0,"...)
+		buf = append(buf, "o=0"...)
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.Lossless {
-		buf = append(buf, "lossless=1,"...)
+		buf = append(buf, "lossless=1"...)
+		buf = appendComma(buf, escapeComma)
 	}
 	if c.ExifOption != ExifOptionDefault {
 		buf = append(buf, "s="...)
@@ -920,11 +926,16 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.Invert {
-		buf = append(buf, "invert=1,"...)
+		buf = append(buf, "invert=1"...)
+		buf = appendComma(buf, escapeComma)
 	}
 
 	if len(buf) == l {
-		buf = append(buf, "f=auto,"...)
+		buf = append(buf, "f=auto"...)
+		buf = appendComma(buf, escapeComma)
+	}
+	if escapeComma {
+		return buf[:len(buf)-3]
 	}
 	return buf[:len(buf)-1]
 }
@@ -975,7 +986,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 	if o.DisableEnlarge {
-		buf = append(buf, "u=0,"...)
+		buf = append(buf, "u=0"...)
+		buf = appendComma(buf, escapeComma)
 	}
 	if o.AspectMode != AspectModeDefault {
 		buf = append(buf, "a="...)
@@ -1067,7 +1079,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 			buf = appendByte(buf, byte(b>>8))
 			buf = appendComma(buf, escapeComma)
 		} else if a == 0 {
-			buf = append(buf, "b=000000,"...)
+			buf = append(buf, "b=000000"...)
+			buf = appendComma(buf, escapeComma)
 		} else {
 			c := fmt.Sprintf("b=%02x%02x%02x%02x,", r>>8, g>>8, b>>8, a>>8)
 			buf = append(buf, c...)
@@ -1077,7 +1090,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 	// rotation
 	if ir := o.InputRotate; ir != RotateDefault {
 		if ir == RotateAuto {
-			buf = append(buf, "ir=auto,"...)
+			buf = append(buf, "ir=auto"...)
+			buf = appendComma(buf, escapeComma)
 		} else {
 			buf = append(buf, "ir="...)
 			buf = strconv.AppendInt(buf, int64(ir), 10)
@@ -1089,7 +1103,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 			or = r
 		}
 		if or == RotateAuto {
-			buf = append(buf, "or=auto,"...)
+			buf = append(buf, "or=auto"...)
+			buf = appendComma(buf, escapeComma)
 		} else {
 			buf = append(buf, "or="...)
 			buf = strconv.AppendInt(buf, int64(or), 10)
@@ -1100,7 +1115,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 	if o.Offset != zp {
 		buf = append(buf, "x="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
-		buf = append(buf, ",y="...)
+		buf = appendComma(buf, escapeComma)
+		buf = append(buf, "y="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
 		buf = appendComma(buf, escapeComma)
 	}
@@ -1109,7 +1125,8 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
 		buf = append(buf, "xr="...)
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
-		buf = append(buf, ",yr="...)
+		buf = appendComma(buf, escapeComma)
+		buf = append(buf, "yr="...)
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
 		buf = appendComma(buf, escapeComma)
 	}
