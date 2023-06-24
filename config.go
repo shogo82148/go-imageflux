@@ -9,9 +9,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const rectangleScale = 100
+
+// nowFunc is for testing.
+var nowFunc = time.Now
+
+// ErrExpired is returned when the image is expired.
+var ErrExpired = errors.New("imageflux: expired")
 
 // Config is configure of image.
 type Config struct {
@@ -1454,6 +1461,15 @@ func (s *parseState) setValue(key, value string) error {
 			s.config.Invert = true
 		default:
 			return fmt.Errorf("imageflux: invalid invert %q", value)
+		}
+
+	case "expires":
+		expires, err := time.Parse(time.RFC3339, value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid expires %q", value)
+		}
+		if !expires.Before(nowFunc()) {
+			return ErrExpired
 		}
 	}
 	return nil

@@ -6,6 +6,7 @@ package imageflux
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func FuzzParseConfig(f *testing.F) {
@@ -55,8 +56,11 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("contrast=0")
 	f.Add("contrast=200")
 	f.Add("invert=1")
+	f.Add("expires=2023-06-24T09:22:59Z")
 
 	f.Fuzz(func(t *testing.T, s string) {
+		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
 		c0, rest, err := ParseConfig(s)
 		if err != nil {
 			return
