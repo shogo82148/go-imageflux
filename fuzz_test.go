@@ -5,6 +5,7 @@ package imageflux
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -57,6 +58,12 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("contrast=200")
 	f.Add("invert=1")
 	f.Add("expires=2023-06-24T09:22:59Z")
+	f.Add("/images/1.jpg")
+	f.Add("images/1.jpg")
+	f.Add("w=100/images/1.jpg")
+	f.Add("/w=100/images/1.jpg")
+	f.Add("/c/w=100/images/1.jpg")
+	f.Add("/c!/w=100/images/1.jpg")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
@@ -83,6 +90,34 @@ func FuzzParseConfig(f *testing.F) {
 
 		if !reflect.DeepEqual(c0, c1) {
 			t.Errorf("%q: c0 != c1: %v != %v", s, c0, c1)
+		}
+	})
+}
+
+func FuzzProxy_Parse(f *testing.F) {
+	f.Add("/c!/w=100/images/1.jpg", "", "")
+	f.Add("/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200,sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200/images/1.jpg", "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=", "testsigningsecret")
+	f.Add("/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/images/1.jpg", "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=", "testsigningsecret")
+
+	f.Fuzz(func(t *testing.T, path, sig, secret string) {
+		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
+		p := &Proxy{
+			Host:   "example.com",
+			Secret: secret,
+		}
+		img0, err := p.Parse(path, sig)
+		if err != nil {
+			return
+		}
+
+		u := img0.SignedURL()
+		_, err = p.Parse(strings.TrimPrefix(u, "https://example.com"), "")
+		if err != nil {
+			t.Error(err)
 		}
 	})
 }
