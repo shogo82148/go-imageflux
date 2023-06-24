@@ -107,6 +107,25 @@ func TestImage_SignedURL(t *testing.T) {
 			},
 			"https://demo.imageflux.jp/c/sig=1.dFGx33tPqUTZLhzxcbOY5_f-afI9EBDga8rwbmMsW2o=,w=200,expires=2023-06-24T09:23:00Z/images/1.jpg",
 		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/bridge.jpg",
+				Config: &Config{
+					Width: 400,
+					Overlays: []Overlay{
+						{
+							Width: 300,
+							URL:   "images/1.png",
+						},
+					},
+					Format: FormatWebPAuto,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=400,l=(w=300%2Fimages%2F1.png),f=webp:auto/bridge.jpg",
+		},
 	}
 
 	for _, c := range cases {
@@ -212,6 +231,25 @@ func TestImage_SignedURLWithoutComma(t *testing.T) {
 				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
 			},
 			"https://demo.imageflux.jp/c/sig=1.Aa05y5VnlhocCF-RABA2--P7-4kc8E9LqJ86BqGosqw=%2Cw=200%2Cexpires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/bridge.jpg",
+				Config: &Config{
+					Width: 400,
+					Overlays: []Overlay{
+						{
+							Width: 300,
+							URL:   "images/1.png",
+						},
+					},
+					Format: FormatWebPAuto,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=400%2Cl=(w=300%2Fimages%2F1.png)%2Cf=webp:auto/bridge.jpg",
 		},
 	}
 

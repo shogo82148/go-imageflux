@@ -1149,8 +1149,13 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = appendComma(buf, escapeComma)
 	}
 
-	if len(buf) > l {
-		buf = buf[:len(buf)-1] // remove trailing comma
+	// remove trailing comma
+	if len(buf) != l {
+		if escapeComma {
+			buf = buf[:len(buf)-3]
+		} else {
+			buf = buf[:len(buf)-1]
+		}
 	}
 	buf = append(buf, "%2F"...)
 	buf = append(buf, url.QueryEscape(o.URL)...)
