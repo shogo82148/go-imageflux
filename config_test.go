@@ -499,6 +499,33 @@ func TestConfig(t *testing.T) {
 	}
 }
 
+func TestOverlay(t *testing.T) {
+	cases := []struct {
+		overlay *Overlay
+		output  string
+	}{
+		{
+			overlay: &Overlay{
+				Background: color.Black,
+				URL:        "images/1.png",
+			},
+			output: "b=000000%2Fimages%2F1.png",
+		},
+		{
+			overlay: &Overlay{
+				Background: color.NRGBA{R: 255, G: 255, B: 255, A: 128},
+				URL:        "images/1.png",
+			},
+			output: "b=ffffff80%2Fimages%2F1.png",
+		},
+	}
+	for _, c := range cases {
+		if got := c.overlay.String(); got != c.output {
+			t.Errorf("%#v: want %q, got %q", c.overlay, c.output, got)
+		}
+	}
+}
+
 func TestParseConfig(t *testing.T) {
 	fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
 
