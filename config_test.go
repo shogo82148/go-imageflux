@@ -732,6 +732,28 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: "unsharp=10x1+1+0.5",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius:    10,
+					Sigma:     1.0,
+					Gain:      1.0,
+					Threshold: 0.5,
+				},
+			},
+		},
+		{
+			input: "unsharp=1x1+0+.1",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius:    1,
+					Sigma:     1.0,
+					Gain:      0.0,
+					Threshold: .1,
+				},
+			},
+		},
 		// TODO: blur
 		{
 			input: "grayscale=0",

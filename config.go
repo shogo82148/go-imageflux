@@ -243,7 +243,7 @@ func (u Unsharp) append(buf []byte) []byte {
 	buf = strconv.AppendInt(buf, int64(u.Radius), 10)
 	buf = append(buf, 'x')
 	buf = strconv.AppendFloat(buf, u.Sigma, 'f', -1, 64)
-	if u.Gain != 0 && u.Threshold != 0 {
+	if u.Threshold != 0 {
 		buf = append(buf, '+')
 		buf = strconv.AppendFloat(buf, u.Gain, 'f', -1, 64)
 		buf = append(buf, '+')
@@ -258,11 +258,14 @@ func parseUnsharp(s string) (Unsharp, error) {
 	// radius
 	idx := strings.IndexByte(s, 'x')
 	if idx < 0 {
-		return u, errors.New("imageflux: invalid unsharp format")
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
 	}
 	r, err := strconv.ParseInt(s[:idx], 10, 0)
 	if err != nil {
-		return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if r <= 0 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
 	}
 	u.Radius = int(r)
 	s = s[idx+1:]
@@ -274,11 +277,43 @@ func parseUnsharp(s string) (Unsharp, error) {
 		if err != nil {
 			return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
 		}
+		if sigma <= 0 {
+			return u, errors.New("imageflux: invalid unsharp format")
+		}
 		u.Sigma = sigma
 		return u, nil
 	}
+	sigma, err := strconv.ParseFloat(s[:idx], 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if sigma == 0 {
+		return u, errors.New("imageflux: invalid unsharp format")
+	}
+	u.Sigma = sigma
+	s = s[idx+1:]
 
-	// TODO: parse gain and threshold
+	// gain
+	idx = strings.IndexByte(s, '+')
+	if idx < 0 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	gain, err := strconv.ParseFloat(s[:idx], 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	u.Gain = gain
+	s = s[idx+1:]
+
+	// threshold
+	threshold, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	if threshold <= 0 || threshold >= 1 {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
+	u.Threshold = threshold
 
 	return u, nil
 }
