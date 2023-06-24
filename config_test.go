@@ -695,6 +695,96 @@ func TestParseConfig(t *testing.T) {
 				Lossless: true,
 			},
 		},
+
+		// output format
+		{
+			input: "f=webp:png",
+			want: &Config{
+				Format: FormatWebPPNG,
+			},
+		},
+		{
+			input: "q=75",
+			want: &Config{
+				Quality: 75,
+			},
+		},
+		{
+			input: "o=0",
+			want: &Config{
+				DisableOptimization: true,
+			},
+		},
+		{
+			input: "lossless=1",
+			want: &Config{
+				Lossless: true,
+			},
+		},
+		{
+			input: "s=2",
+			want: &Config{
+				ExifOption: ExifOptionKeepOrientation,
+			},
+		},
+
+		// image filters
+		// TODO: unsharp
+		// TODO: blur
+		{
+			input: "grayscale=0",
+			want: &Config{
+				GrayScale: 0,
+			},
+		},
+		{
+			input: "grayscale=100",
+			want: &Config{
+				GrayScale: 100,
+			},
+		},
+		{
+			input: "sepia=0",
+			want: &Config{
+				Sepia: 0,
+			},
+		},
+		{
+			input: "sepia=100",
+			want: &Config{
+				Sepia: 100,
+			},
+		},
+		{
+			input: "brightness=0",
+			want: &Config{
+				Brightness: -100,
+			},
+		},
+		{
+			input: "brightness=200",
+			want: &Config{
+				Brightness: 100,
+			},
+		},
+		{
+			input: "contrast=0",
+			want: &Config{
+				Contrast: -100,
+			},
+		},
+		{
+			input: "contrast=200",
+			want: &Config{
+				Contrast: 100,
+			},
+		},
+		{
+			input: "invert=1",
+			want: &Config{
+				Invert: true,
+			},
+		},
 	}
 
 	for _, c := range cases {

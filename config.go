@@ -1264,6 +1264,52 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid exif option %q", value)
 		}
 		s.config.ExifOption = ExifOption(v)
+
+	// TODO: Unsharp
+	// TODO: Blur
+
+	// GrayScale
+	case "grayscale":
+		grayscale, err := strconv.Atoi(value)
+		if err != nil || grayscale < 0 || grayscale > 100 {
+			return fmt.Errorf("imageflux: invalid grayscale %q", value)
+		}
+		s.config.GrayScale = grayscale
+
+	// Sepia
+	case "sepia":
+		sepia, err := strconv.Atoi(value)
+		if err != nil || sepia < 0 || sepia > 100 {
+			return fmt.Errorf("imageflux: invalid sepia %q", value)
+		}
+		s.config.Sepia = sepia
+
+	// Brightness
+	case "brightness":
+		brightness, err := strconv.Atoi(value)
+		if err != nil || brightness < 0 {
+			return fmt.Errorf("imageflux: invalid brightness %q", value)
+		}
+		s.config.Brightness = brightness - 100
+
+	// Contrast
+	case "contrast":
+		contrast, err := strconv.Atoi(value)
+		if err != nil || contrast < 0 {
+			return fmt.Errorf("imageflux: invalid contrast %q", value)
+		}
+		s.config.Contrast = contrast - 100
+
+	// Invert
+	case "invert":
+		switch value {
+		case "0":
+			s.config.Invert = false
+		case "1":
+			s.config.Invert = true
+		default:
+			return fmt.Errorf("imageflux: invalid invert %q", value)
+		}
 	}
 	return nil
 }
