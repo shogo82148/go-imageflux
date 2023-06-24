@@ -1,6 +1,7 @@
 package imageflux
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -249,6 +250,37 @@ func (u Unsharp) append(buf []byte) []byte {
 		buf = strconv.AppendFloat(buf, u.Threshold, 'f', -1, 64)
 	}
 	return buf
+}
+
+func parseUnsharp(s string) (Unsharp, error) {
+	var u Unsharp
+
+	// radius
+	idx := strings.IndexByte(s, 'x')
+	if idx < 0 {
+		return u, errors.New("imageflux: invalid unsharp format")
+	}
+	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	if err != nil {
+		return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+	}
+	u.Radius = int(r)
+	s = s[idx+1:]
+
+	// sigma
+	idx = strings.IndexByte(s, '+')
+	if idx < 0 {
+		sigma, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
+		}
+		u.Sigma = sigma
+		return u, nil
+	}
+
+	// TODO: parse gain and threshold
+
+	return u, nil
 }
 
 // Blur is a blur config.
@@ -1297,7 +1329,14 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		s.config.ExifOption = ExifOption(v)
 
-	// TODO: Unsharp
+	// Unsharp
+	case "unsharp":
+		unsharp, err := parseUnsharp(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid unsharp %q", value)
+		}
+		s.config.Unsharp = unsharp
+
 	// TODO: Blur
 
 	// GrayScale

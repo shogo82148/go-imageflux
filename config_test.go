@@ -723,7 +723,15 @@ func TestParseConfig(t *testing.T) {
 		},
 
 		// image filters
-		// TODO: unsharp
+		{
+			input: "unsharp=10x1",
+			want: &Config{
+				Unsharp: Unsharp{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+		},
 		// TODO: blur
 		{
 			input: "grayscale=0",
