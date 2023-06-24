@@ -754,7 +754,15 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 		},
-		// TODO: blur
+		{
+			input: "blur=10x1",
+			want: &Config{
+				Blur: Blur{
+					Radius: 10,
+					Sigma:  1.0,
+				},
+			},
+		},
 		{
 			input: "grayscale=0",
 			want: &Config{

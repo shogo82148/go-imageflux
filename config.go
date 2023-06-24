@@ -331,6 +331,36 @@ func (b Blur) append(buf []byte) []byte {
 	return buf
 }
 
+func parseBlur(s string) (Blur, error) {
+	idx := strings.IndexByte(s, 'x')
+	if idx < 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	// radius
+	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	if err != nil {
+		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
+	}
+	if r <= 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	// sigma
+	sigma, err := strconv.ParseFloat(s[idx+1:], 64)
+	if err != nil {
+		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
+	}
+	if sigma <= 0 {
+		return Blur{}, errors.New("imageflux: invalid blur format")
+	}
+
+	return Blur{
+		Radius: int(r),
+		Sigma:  sigma,
+	}, nil
+}
+
 // AspectMode is aspect mode.
 type AspectMode int
 
@@ -1372,7 +1402,13 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		s.config.Unsharp = unsharp
 
-	// TODO: Blur
+	// Blur
+	case "blur":
+		blur, err := parseBlur(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid blur %q", value)
+		}
+		s.config.Blur = blur
 
 	// GrayScale
 	case "grayscale":
