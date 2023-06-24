@@ -36,6 +36,23 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("or=auto")
 	f.Add("r=8")
 	f.Add("r=auto")
+	f.Add("through=jpg")
+	f.Add("through=webp:gif:png:jpg")
+	f.Add("f=webp:png")
+	f.Add("q=75")
+	f.Add("o=0")
+	f.Add("lossless=1")
+	f.Add("s=2")
+	f.Add("grayscale=0")
+	f.Add("grayscale=100")
+	f.Add("sepia=0")
+	f.Add("sepia=100")
+	f.Add("brightness=0")
+	f.Add("brightness=200")
+	f.Add("contrast=0")
+	f.Add("contrast=200")
+	f.Add("invert=1")
+
 	f.Fuzz(func(t *testing.T, s string) {
 		c0, rest, err := ParseConfig(s)
 		if err != nil {

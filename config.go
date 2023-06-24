@@ -509,6 +509,31 @@ func (t Through) append(buf []byte) []byte {
 	return buf[:len(buf)-1]
 }
 
+func parseThrough(s string) (Through, error) {
+	var t Through
+	for s != "" {
+		var v string
+		if idx := strings.IndexByte(s, ':'); idx >= 0 {
+			v = s[:idx]
+			s = s[idx+1:]
+		} else {
+			v = s
+			s = ""
+		}
+		switch v {
+		case "jpg":
+			t |= ThroughJPEG
+		case "png":
+			t |= ThroughPNG
+		case "gif":
+			t |= ThroughGIF
+		case "webp":
+			t |= ThroughWebP
+		}
+	}
+	return t, nil
+}
+
 // MaskType specifies the area to be treated as a mask.
 type MaskType string
 
@@ -1220,7 +1245,14 @@ func (s *parseState) setValue(key, value string) error {
 			s.config.OutputRotate = Rotate(ir)
 		}
 
-	// TODO: Through
+	// Through
+	case "through":
+		t, err := parseThrough(value)
+		if err != nil {
+			return err
+		}
+		s.config.Through = t
+
 	// TODO: Overlays
 
 	// Format

@@ -678,21 +678,15 @@ func TestParseConfig(t *testing.T) {
 		},
 
 		{
-			input: "f=webp:png",
+			input: "through=jpg",
 			want: &Config{
-				Format: FormatWebPPNG,
+				Through: ThroughJPEG,
 			},
 		},
 		{
-			input: "o=0",
+			input: "through=webp:gif:png:jpg",
 			want: &Config{
-				DisableOptimization: true,
-			},
-		},
-		{
-			input: "lossless=1",
-			want: &Config{
-				Lossless: true,
+				Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 			},
 		},
 
