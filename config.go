@@ -675,9 +675,11 @@ const (
 	exifOptionMax ExifOption = 3
 )
 
+// String returns a string representing the Config.
+// If c is nil or zero value, it returns "f=auto".
 func (c *Config) String() string {
 	if c == nil {
-		return ""
+		return "f=auto"
 	}
 	buf := bufPool.Get().(*[]byte)
 	*buf = c.append((*buf)[:0])
@@ -690,6 +692,7 @@ func (c *Config) append(buf []byte) []byte {
 	var zr image.Rectangle
 	var zp image.Point
 	if c == nil {
+		buf = append(buf, "f=auto"...)
 		return buf
 	}
 
@@ -907,10 +910,10 @@ func (c *Config) append(buf []byte) []byte {
 		buf = append(buf, "invert=1,"...)
 	}
 
-	if len(buf) != l {
-		buf = buf[:len(buf)-1]
+	if len(buf) == l {
+		buf = append(buf, "f=auto,"...)
 	}
-	return buf
+	return buf[:len(buf)-1]
 }
 
 func appendByte(buf []byte, b byte) []byte {

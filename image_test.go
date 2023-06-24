@@ -2,7 +2,10 @@ package imageflux
 
 import (
 	"testing"
+	"time"
 )
+
+var jst *time.Location = time.FixedZone("Asia/Tokyo", 9*60*60)
 
 func BenchmarkImage(b *testing.B) {
 	img := &Image{
@@ -20,7 +23,7 @@ func BenchmarkImage(b *testing.B) {
 	}
 }
 
-func TestImage(t *testing.T) {
+func TestImage_SignedURL(t *testing.T) {
 	cases := []struct {
 		image  *Image
 		output string
@@ -32,7 +35,7 @@ func TestImage(t *testing.T) {
 				},
 				Path: "/images/1.jpg",
 			},
-			"https://demo.imageflux.jp/images/1.jpg",
+			"https://demo.imageflux.jp/c/f=auto/images/1.jpg",
 		},
 		{
 			&Image{
@@ -54,7 +57,7 @@ func TestImage(t *testing.T) {
 				},
 				Path: "/images/1.jpg",
 			},
-			"https://demo.imageflux.jp/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=,f=auto/images/1.jpg",
 		},
 		{
 			&Image{
@@ -65,7 +68,7 @@ func TestImage(t *testing.T) {
 				Path:   "/images/1.jpg",
 				Config: &Config{},
 			},
-			"https://demo.imageflux.jp/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=,f=auto/images/1.jpg",
 		},
 		{
 			&Image{
@@ -80,10 +83,79 @@ func TestImage(t *testing.T) {
 			},
 			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
 		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path:    "/images/1.jpg",
+				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/f=auto,expires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:   "demo.imageflux.jp",
+					Secret: "testsigningsecret",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/sig=1.dFGx33tPqUTZLhzxcbOY5_f-afI9EBDga8rwbmMsW2o=,w=200,expires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
 	}
 
 	for _, c := range cases {
 		if got := c.image.SignedURL(); got != c.output {
+			t.Errorf("want %s, got %s", c.output, got)
+		}
+	}
+}
+
+func TestImage_String(t *testing.T) {
+	cases := []struct {
+		image  *Image
+		output string
+	}{
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/images/1.jpg",
+			},
+			"https://demo.imageflux.jp/c/f=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=200/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path:    "/images/1.jpg",
+				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/f=auto,expires=2023-06-24T09:23:00Z/images/1.jpg",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.image.String(); got != c.output {
 			t.Errorf("want %s, got %s", c.output, got)
 		}
 	}

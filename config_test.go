@@ -67,11 +67,11 @@ func TestConfig(t *testing.T) {
 	}{
 		{
 			config: nil,
-			output: "",
+			output: "f=auto",
 		},
 		{
 			config: &Config{},
-			output: "",
+			output: "f=auto",
 		},
 		{
 			config: &Config{
