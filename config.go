@@ -1639,7 +1639,7 @@ func (s *parseState) getValue() string {
 	var nest int
 	i := s.idx
 LOOP:
-	for i < len(s.s) {
+	for ; i < len(s.s); i++ {
 		switch s.s[i] {
 		case '(':
 			nest++
@@ -1649,8 +1649,15 @@ LOOP:
 			if nest == 0 {
 				break LOOP
 			}
+		case '%':
+			if nest != 0 {
+				break
+			}
+			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				// "%2C" is encoded comma ','.
+				break LOOP
+			}
 		}
-		i++
 	}
 	value := s.s[s.idx:i]
 	s.idx = i
@@ -1661,6 +1668,11 @@ LOOP:
 func (s *parseState) skipComma() (skipped bool) {
 	if s.idx < len(s.s) && s.s[s.idx] == ',' {
 		s.idx++
+		return true
+	}
+	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
 		return true
 	}
 	return false

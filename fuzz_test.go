@@ -64,6 +64,8 @@ func FuzzParseConfig(f *testing.F) {
 	f.Add("/w=100/images/1.jpg")
 	f.Add("/c/w=100/images/1.jpg")
 	f.Add("/c!/w=100/images/1.jpg")
+	f.Add("w=100%2ch=200")
+	f.Add("w=100%2Ch=200")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))

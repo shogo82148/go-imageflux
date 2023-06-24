@@ -875,6 +875,22 @@ func TestParseConfig(t *testing.T) {
 			},
 			rest: "/images/1.jpg",
 		},
+
+		// ',' may be escaped
+		{
+			input: "w=100%2ch=200",
+			want: &Config{
+				Width:  100,
+				Height: 200,
+			},
+		},
+		{
+			input: "w=100%2Ch=200",
+			want: &Config{
+				Width:  100,
+				Height: 200,
+			},
+		},
 	}
 
 	for _, c := range cases {
