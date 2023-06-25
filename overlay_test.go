@@ -405,7 +405,7 @@ func TestParseOverlay(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got, err := ParseOverlay(c.input)
+		got, err := parseOverlay(c.input)
 		if err != nil {
 			t.Errorf("%q: unexpected %v", c.input, err)
 		}

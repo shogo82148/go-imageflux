@@ -1260,7 +1260,7 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid overlays %q", value)
 		}
 		value = value[1 : len(value)-1]
-		overlay, err := ParseOverlay(value)
+		overlay, err := parseOverlay(value)
 		if err != nil {
 			return err
 		}
