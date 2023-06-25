@@ -1,10 +1,13 @@
 package imageflux
 
 import (
+	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 // Overlay is the configure of an overlay image.
@@ -295,4 +298,319 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 	buf = append(buf, "%2F"...)
 	buf = append(buf, url.QueryEscape(o.URL)...)
 	return buf
+}
+
+type overlayParseState struct {
+	s       string
+	idx     int
+	overlay *Overlay
+}
+
+func parseOverlay(s string) (*Overlay, error) {
+	ss, err := url.PathUnescape(s)
+	if err != nil {
+		return nil, err
+	}
+
+	state := overlayParseState{
+		s:       ss,
+		overlay: &Overlay{},
+	}
+	return state.parseOverlay()
+}
+
+// getKey returns the key at the current index and advances the index.
+func (s *overlayParseState) getKey() string {
+	i := s.idx
+	for ; i < len(s.s); i++ {
+		if s.s[i] == '=' || s.s[i] == '/' {
+			break
+		}
+	}
+	key := s.s[s.idx:i]
+	s.idx = i
+	return key
+}
+
+// skipEqual skips the '=' at the current index and returns true if it was found.
+func (s *overlayParseState) skipEqual() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == '=' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+// getValue returns the value at the current index and advances the index.
+func (s *overlayParseState) getValue() string {
+	i := s.idx
+	for ; i < len(s.s); i++ {
+		if s.s[i] == ',' || s.s[i] == '/' {
+			break
+		}
+	}
+	value := s.s[s.idx:i]
+	s.idx = i
+	return value
+}
+
+// skipComma skips the ',' at the current index and returns true if it was found.
+func (s *overlayParseState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	return false
+}
+
+func (s *overlayParseState) parseOverlay() (*Overlay, error) {
+	for {
+		key := s.getKey()
+		if key == "" {
+			break
+		}
+		if !s.skipEqual() {
+			return nil, fmt.Errorf("imageflux: missing '=' after key %q", key)
+		}
+		value := s.getValue()
+		s.skipComma()
+		if err := s.setValue(key, value); err != nil {
+			return nil, err
+		}
+	}
+	s.overlay.URL = s.s[s.idx:]
+	return s.overlay, nil
+}
+
+func (s *overlayParseState) setValue(key, value string) error {
+	var zr image.Rectangle
+
+	switch key {
+	// Width
+	case "w":
+		w, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid width %q: %w", value, err)
+		}
+		if w <= 0 {
+			return fmt.Errorf("imageflux: invalid width %q: validation error", value)
+		}
+		s.overlay.Width = w
+
+	// Height
+	case "h":
+		h, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid height %q: %w", value, err)
+		}
+		if h <= 0 {
+			return fmt.Errorf("imageflux: invalid height %q: validation error", value)
+		}
+		s.overlay.Height = h
+
+	// DisableEnlarge
+	case "u":
+		switch value {
+		case "0":
+			s.overlay.DisableEnlarge = true
+		case "1":
+			s.overlay.DisableEnlarge = false
+		default:
+			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
+		}
+
+	// AspectMode
+	case "a":
+		a, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid aspect mode %q: %w", value, err)
+		}
+		if a < 0 || AspectMode(a+1) >= aspectModeMax {
+			return fmt.Errorf("imageflux: invalid aspect mode %q: validation error", value)
+		}
+		s.overlay.AspectMode = AspectMode(a + 1)
+
+	// InputClip
+	case "ic":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
+		ic := image.Rect(minX, minY, maxX, maxY)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ic == zr {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		s.overlay.InputClip = ic
+
+	// InputClipRatio
+	case "icr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		icr := image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || icr == zr {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		s.overlay.InputClipRatio = icr
+		s.overlay.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// InputOrigin
+	case "ig":
+		ig, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid input origin %q: %w", value, err)
+		}
+		if ig < 0 || Origin(ig) >= originMax {
+			return fmt.Errorf("imageflux: invalid input origin %q: validation error", value)
+		}
+		s.overlay.InputOrigin = Origin(ig)
+
+	// OutputClip
+	case "oc", "c":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip %q", value)
+		}
+		minX, err0 := strconv.Atoi(v0)
+		minY, err1 := strconv.Atoi(v1)
+		maxX, err2 := strconv.Atoi(v2)
+		maxY, err3 := strconv.Atoi(v3)
+		oc := image.Rect(minX, minY, maxX, maxY)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || oc == zr {
+			return fmt.Errorf("imageflux: invalid input clip %q", value)
+		}
+		s.overlay.OutputClip = oc
+
+	// OutputClipRatio
+	case "ocr", "cr":
+		v0, v1, v2, v3, ok := split4(value)
+		if !ok {
+			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
+		}
+		minX, err0 := strconv.ParseFloat(v0, 64)
+		minY, err1 := strconv.ParseFloat(v1, 64)
+		maxX, err2 := strconv.ParseFloat(v2, 64)
+		maxY, err3 := strconv.ParseFloat(v3, 64)
+		ocr := image.Rect(
+			int(math.Round(minX*rectangleScale)),
+			int(math.Round(minY*rectangleScale)),
+			int(math.Round(maxX*rectangleScale)),
+			int(math.Round(maxY*rectangleScale)),
+		)
+		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ocr == zr {
+			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
+		}
+		s.overlay.OutputClipRatio = ocr
+		s.overlay.ClipMax = image.Pt(rectangleScale, rectangleScale)
+
+	// OutputOrigin
+	case "og":
+		og, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid output origin %q: %w", value, err)
+		}
+		if og < 0 || Origin(og) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q: validation error", value)
+		}
+		s.overlay.OutputOrigin = Origin(og)
+
+	// Origin
+	case "g":
+		g, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid origin %q: %w", value, err)
+		}
+		if g < 0 || Origin(g) >= originMax {
+			return fmt.Errorf("imageflux: invalid origin %q: validation error", value)
+		}
+		s.overlay.Origin = Origin(g)
+
+	// Background
+	case "b":
+		if len(value) == 6 {
+			rgb, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.overlay.Background = color.NRGBA{
+				R: uint8(rgb >> 16),
+				G: uint8(rgb >> 8),
+				B: uint8(rgb),
+				A: 0xff,
+			}
+		} else if len(value) == 8 {
+			rgba, err := strconv.ParseUint(value, 16, 32)
+			if err != nil {
+				return fmt.Errorf("imageflux: invalid background %q", value)
+			}
+			s.overlay.Background = color.NRGBA{
+				R: uint8(rgba >> 24),
+				G: uint8(rgba >> 16),
+				B: uint8(rgba >> 8),
+				A: uint8(rgba),
+			}
+		} else {
+			return fmt.Errorf("imageflux: invalid background %q", value)
+		}
+
+	// InputRotate
+	case "ir":
+		if value == "auto" {
+			s.overlay.InputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid input rotate %q", value)
+			}
+			s.overlay.InputRotate = Rotate(ir)
+		}
+
+	// OutputRotate
+	case "or", "r":
+		if value == "auto" {
+			s.overlay.OutputRotate = RotateAuto
+		} else {
+			ir, err := strconv.Atoi(value)
+			if err != nil || Rotate(ir) < rotateMin || Rotate(ir) >= rotateMax {
+				return fmt.Errorf("imageflux: invalid output rotate %q", value)
+			}
+			s.overlay.OutputRotate = Rotate(ir)
+		}
+	}
+	return nil
+}
+
+func split4(s string) (a, b, c, d string, ok bool) {
+	idx1 := strings.IndexByte(s, ':')
+	if idx1 < 0 {
+		return
+	}
+	idx2 := strings.IndexByte(s[idx1+1:], ':')
+	if idx2 < 0 {
+		return
+	}
+	idx3 := strings.IndexByte(s[idx1+idx2+2:], ':')
+	if idx3 < 0 {
+		return
+	}
+	a = s[:idx1]
+	b = s[idx1+1 : idx1+idx2+1]
+	c = s[idx1+idx2+2 : idx1+idx2+idx3+2]
+	d = s[idx1+idx2+idx3+3:]
+	ok = true
+	return
 }

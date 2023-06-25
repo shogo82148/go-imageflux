@@ -115,7 +115,7 @@ func TestImage_SignedURL(t *testing.T) {
 				Path: "/bridge.jpg",
 				Config: &Config{
 					Width: 400,
-					Overlays: []Overlay{
+					Overlays: []*Overlay{
 						{
 							Width: 300,
 							URL:   "images/1.png",
@@ -240,7 +240,7 @@ func TestImage_SignedURLWithoutComma(t *testing.T) {
 				Path: "/bridge.jpg",
 				Config: &Config{
 					Width: 400,
-					Overlays: []Overlay{
+					Overlays: []*Overlay{
 						{
 							Width: 300,
 							URL:   "images/1.png",

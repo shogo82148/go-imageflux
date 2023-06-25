@@ -104,7 +104,7 @@ type Config struct {
 	Through Through
 
 	// Overlay Parameters.
-	Overlays []Overlay
+	Overlays []*Overlay
 
 	// Output Parameters.
 	Format Format
@@ -1037,7 +1037,10 @@ func (s *parseState) setValue(key, value string) error {
 	case "w":
 		w, err := strconv.Atoi(value)
 		if err != nil {
-			return fmt.Errorf("imageflux: invalid width %q", value)
+			return fmt.Errorf("imageflux: invalid width %q: %w", value, err)
+		}
+		if w <= 0 {
+			return fmt.Errorf("imageflux: invalid width %q: validation error", value)
 		}
 		s.config.Width = w
 
@@ -1045,7 +1048,10 @@ func (s *parseState) setValue(key, value string) error {
 	case "h":
 		h, err := strconv.Atoi(value)
 		if err != nil {
-			return fmt.Errorf("imageflux: invalid height %q", value)
+			return fmt.Errorf("imageflux: invalid height %q: %w", value, err)
+		}
+		if h <= 0 {
+			return fmt.Errorf("imageflux: invalid height %q: validation error", value)
 		}
 		s.config.Height = h
 
@@ -1063,8 +1069,11 @@ func (s *parseState) setValue(key, value string) error {
 	// AspectMode
 	case "a":
 		a, err := strconv.Atoi(value)
-		if err != nil || a < 0 || AspectMode(a+1) >= aspectModeMax {
-			return fmt.Errorf("imageflux: invalid aspect mode %q", value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid aspect mode %q: %w", value, err)
+		}
+		if a < 0 || AspectMode(a+1) >= aspectModeMax {
+			return fmt.Errorf("imageflux: invalid aspect mode %q: validation error", value)
 		}
 		s.config.AspectMode = AspectMode(a + 1)
 
@@ -1117,8 +1126,11 @@ func (s *parseState) setValue(key, value string) error {
 	// InputOrigin
 	case "ig":
 		ig, err := strconv.Atoi(value)
-		if err != nil || ig < 0 || Origin(ig) >= originMax {
-			return fmt.Errorf("imageflux: invalid input origin %q", value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid input origin %q: %w", value, err)
+		}
+		if ig < 0 || Origin(ig) >= originMax {
+			return fmt.Errorf("imageflux: invalid input origin %q: validation error", value)
 		}
 		s.config.InputOrigin = Origin(ig)
 
@@ -1163,16 +1175,22 @@ func (s *parseState) setValue(key, value string) error {
 	// OutputOrigin
 	case "og":
 		og, err := strconv.Atoi(value)
-		if err != nil || og < 0 || Origin(og) >= originMax {
-			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid output origin %q: %w", value, err)
+		}
+		if og < 0 || Origin(og) >= originMax {
+			return fmt.Errorf("imageflux: invalid output origin %q: validation error", value)
 		}
 		s.config.OutputOrigin = Origin(og)
 
 	// Origin
 	case "g":
 		g, err := strconv.Atoi(value)
-		if err != nil || g < 0 || Origin(g) >= originMax {
-			return fmt.Errorf("imageflux: invalid output origin %q", value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid origin %q: %w", value, err)
+		}
+		if g < 0 || Origin(g) >= originMax {
+			return fmt.Errorf("imageflux: invalid origin %q: validation error", value)
 		}
 		s.config.Origin = Origin(g)
 
@@ -1236,7 +1254,17 @@ func (s *parseState) setValue(key, value string) error {
 		}
 		s.config.Through = t
 
-	// TODO: Overlays
+	// Overlays
+	case "l":
+		if len(value) < 2 || value[0] != '(' || value[len(value)-1] != ')' {
+			return fmt.Errorf("imageflux: invalid overlays %q", value)
+		}
+		value = value[1 : len(value)-1]
+		overlay, err := parseOverlay(value)
+		if err != nil {
+			return err
+		}
+		s.config.Overlays = append(s.config.Overlays, overlay)
 
 	// Format
 	case "f":
@@ -1426,25 +1454,4 @@ func (s *parseState) skipComma() (skipped bool) {
 
 func (s *parseState) rest() string {
 	return s.s[s.idx:]
-}
-
-func split4(s string) (a, b, c, d string, ok bool) {
-	idx1 := strings.IndexByte(s, ':')
-	if idx1 < 0 {
-		return
-	}
-	idx2 := strings.IndexByte(s[idx1+1:], ':')
-	if idx2 < 0 {
-		return
-	}
-	idx3 := strings.IndexByte(s[idx1+idx2+2:], ':')
-	if idx3 < 0 {
-		return
-	}
-	a = s[:idx1]
-	b = s[idx1+1 : idx1+idx2+1]
-	c = s[idx1+idx2+2 : idx1+idx2+idx3+2]
-	d = s[idx1+idx2+idx3+3:]
-	ok = true
-	return
 }

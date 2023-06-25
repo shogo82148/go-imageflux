@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -35,22 +36,27 @@ func BenchmarkConfig(b *testing.B) {
 		InputRotate:     RotateLeftBottom,
 		OutputRotate:    RotateLeftBottom,
 		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
-		Overlays: []Overlay{
+		Overlays: []*Overlay{
 			{
-				URL:            "http://example.com/",
-				Width:          100,
-				Height:         100,
-				DisableEnlarge: true,
-				AspectMode:     AspectModePad,
-				Clip:           image.Rect(0, 0, 100, 100),
-				ClipRatio:      image.Rect(0, 0, 100, 100),
-				ClipMax:        image.Pt(100, 100),
-				Origin:         OriginBottomRight,
-				Background:     color.Black,
-				Offset:         image.Pt(100, 100),
-				OffsetRatio:    image.Pt(100, 100),
-				OffsetMax:      image.Pt(100, 100),
-				OverlayOrigin:  OriginBottomRight,
+				URL:             "/images/1.png",
+				Width:           100,
+				Height:          100,
+				DisableEnlarge:  true,
+				AspectMode:      AspectModePad,
+				InputClipRatio:  image.Rect(0, 0, 100, 100),
+				OutputClipRatio: image.Rect(0, 0, 100, 100),
+				ClipMax:         image.Pt(100, 100),
+				Origin:          OriginBottomRight,
+				Background:      color.Black,
+				InputRotate:     RotateLeftBottom,
+				OutputRotate:    RotateLeftBottom,
+				Rotate:          RotateLeftBottom,
+				Offset:          image.Pt(100, 100),
+				OffsetRatio:     image.Pt(100, 100),
+				OffsetMax:       image.Pt(100, 100),
+				OverlayOrigin:   OriginBottomRight,
+				MaskType:        MaskTypeAlpha,
+				PaddingMode:     PaddingModeLeave,
 			},
 		},
 		Format:              FormatWebPFromPNG,
@@ -68,7 +74,7 @@ func BenchmarkConfig(b *testing.B) {
 		},
 	}
 	for i := 0; i < b.N; i++ {
-		_ = config.String()
+		runtime.KeepAlive(config.String())
 	}
 }
 
@@ -329,7 +335,7 @@ func TestConfig(t *testing.T) {
 		// overlays
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL: "images/1.png",
 				}},
 			},
@@ -337,7 +343,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL:    "images/1.png",
 					Offset: image.Pt(100, 200),
 				}},
@@ -346,7 +352,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL:         "images/1.png",
 					OffsetRatio: image.Pt(25, 75),
 					OffsetMax:   image.Pt(100, 100),
@@ -356,7 +362,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL:           "images/1.png",
 					OverlayOrigin: OriginTopLeft,
 				}},
@@ -365,7 +371,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{
+				Overlays: []*Overlay{
 					{
 						URL:    "images/1.png",
 						Offset: image.Pt(100, 200),
@@ -380,7 +386,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL:      "images/1.png",
 					MaskType: MaskTypeWhite,
 				}},
@@ -389,7 +395,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			config: &Config{
-				Overlays: []Overlay{{
+				Overlays: []*Overlay{{
 					URL:         "images/1.png",
 					MaskType:    MaskTypeAlpha,
 					PaddingMode: PaddingModeLeave,
@@ -701,6 +707,31 @@ func TestParseConfig(t *testing.T) {
 			input: "through=webp:gif:png:jpg",
 			want: &Config{
 				Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+			},
+		},
+
+		// overlays
+		{
+			input: "l=(%2Fimages%2F1.png)",
+			want: &Config{
+				Overlays: []*Overlay{{
+					URL: "/images/1.png",
+				}},
+			},
+		},
+		{
+			input: "l=(w=100%2Fimages%2F1.png),l=(w=100%2Fimages%2F2.png)",
+			want: &Config{
+				Overlays: []*Overlay{
+					{
+						Width: 100,
+						URL:   "/images/1.png",
+					},
+					{
+						Width: 100,
+						URL:   "/images/2.png",
+					},
+				},
 			},
 		},
 
