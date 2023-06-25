@@ -335,25 +335,22 @@ func ParseOverlay(s string) (*Overlay, error) {
 }
 
 // getKey returns the key at the current index and advances the index.
-func (s *overlayParseState) getKey() string {
-	i := s.idx
-	for ; i < len(s.s); i++ {
-		if s.s[i] == '=' || s.s[i] == '/' {
-			break
+func (s *overlayParseState) getKey() (key string, foundEqual bool) {
+	for i := s.idx; i < len(s.s); i++ {
+		switch s.s[i] {
+		case '=':
+			key = s.s[s.idx:i]
+			s.idx = i + 1
+			foundEqual = true
+			return
+		case '/':
+			key = s.s[s.idx:i]
+			s.idx = i
+			foundEqual = false
+			return
 		}
 	}
-	key := s.s[s.idx:i]
-	s.idx = i
-	return key
-}
-
-// skipEqual skips the '=' at the current index and returns true if it was found.
-func (s *overlayParseState) skipEqual() (skipped bool) {
-	if s.idx < len(s.s) && s.s[s.idx] == '=' {
-		s.idx++
-		return true
-	}
-	return false
+	return "", false
 }
 
 // getValue returns the value at the current index and advances the index.
@@ -380,12 +377,12 @@ func (s *overlayParseState) skipComma() (skipped bool) {
 
 func (s *overlayParseState) parseOverlay() (*Overlay, error) {
 	for {
-		key := s.getKey()
-		if key == "" {
+		key, foundEqual := s.getKey()
+		if !foundEqual {
+			if key != "" {
+				return nil, fmt.Errorf("imageflux: missing '=' after key %q", key)
+			}
 			break
-		}
-		if !s.skipEqual() {
-			return nil, fmt.Errorf("imageflux: missing '=' after key %q", key)
 		}
 		value := s.getValue()
 		s.skipComma()
@@ -394,6 +391,9 @@ func (s *overlayParseState) parseOverlay() (*Overlay, error) {
 		}
 	}
 	s.overlay.Path = s.s[s.idx:]
+	if !strings.HasPrefix(s.overlay.Path, "/") {
+		s.overlay.Path = "/" + s.overlay.Path
+	}
 	return s.overlay, nil
 }
 
