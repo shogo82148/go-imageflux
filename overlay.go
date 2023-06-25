@@ -306,8 +306,8 @@ type overlayParseState struct {
 	overlay *Overlay
 }
 
-// parseOverlay parses an overlay image.
-func parseOverlay(s string) (*Overlay, error) {
+// ParseOverlay parses an overlay image.
+func ParseOverlay(s string) (*Overlay, error) {
 	ss, err := url.PathUnescape(s)
 	if err != nil {
 		return nil, err
