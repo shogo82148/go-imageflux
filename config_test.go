@@ -38,7 +38,7 @@ func BenchmarkConfig(b *testing.B) {
 		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 		Overlays: []*Overlay{
 			{
-				URL:             "/images/1.png",
+				Path:            "/images/1.png",
 				Width:           100,
 				Height:          100,
 				DisableEnlarge:  true,
@@ -336,7 +336,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL: "images/1.png",
+					Path: "images/1.png",
 				}},
 			},
 			output: "l=(%2Fimages%2F1.png)",
@@ -344,7 +344,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL:    "images/1.png",
+					Path:   "images/1.png",
 					Offset: image.Pt(100, 200),
 				}},
 			},
@@ -353,7 +353,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL:         "images/1.png",
+					Path:        "images/1.png",
 					OffsetRatio: image.Pt(25, 75),
 					OffsetMax:   image.Pt(100, 100),
 				}},
@@ -363,7 +363,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL:           "images/1.png",
+					Path:          "images/1.png",
 					OverlayOrigin: OriginTopLeft,
 				}},
 			},
@@ -373,11 +373,11 @@ func TestConfig(t *testing.T) {
 			config: &Config{
 				Overlays: []*Overlay{
 					{
-						URL:    "images/1.png",
+						Path:   "images/1.png",
 						Offset: image.Pt(100, 200),
 					},
 					{
-						URL:    "images/2.png",
+						Path:   "images/2.png",
 						Offset: image.Pt(200, 100),
 					},
 				},
@@ -387,7 +387,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL:      "images/1.png",
+					Path:     "images/1.png",
 					MaskType: MaskTypeWhite,
 				}},
 			},
@@ -396,7 +396,7 @@ func TestConfig(t *testing.T) {
 		{
 			config: &Config{
 				Overlays: []*Overlay{{
-					URL:         "images/1.png",
+					Path:        "images/1.png",
 					MaskType:    MaskTypeAlpha,
 					PaddingMode: PaddingModeLeave,
 				}},
@@ -715,7 +715,7 @@ func TestParseConfig(t *testing.T) {
 			input: "l=(%2Fimages%2F1.png)",
 			want: &Config{
 				Overlays: []*Overlay{{
-					URL: "/images/1.png",
+					Path: "/images/1.png",
 				}},
 			},
 		},
@@ -725,11 +725,11 @@ func TestParseConfig(t *testing.T) {
 				Overlays: []*Overlay{
 					{
 						Width: 100,
-						URL:   "/images/1.png",
+						Path:  "/images/1.png",
 					},
 					{
 						Width: 100,
-						URL:   "/images/2.png",
+						Path:  "/images/2.png",
 					},
 				},
 			},

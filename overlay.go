@@ -12,7 +12,12 @@ import (
 
 // Overlay is the configure of an overlay image.
 type Overlay struct {
+	// Path is a path for overlay image.
+	Path string
+
 	// URL is an url for overlay image.
+	//
+	// Deprecated: Use Path instead.
 	URL string
 
 	// Width is width in pixel of the scaled image.
@@ -295,9 +300,18 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 			buf = buf[:len(buf)-1]
 		}
 	}
-	buf = append(buf, "%2F"...)
-	buf = append(buf, url.QueryEscape(o.URL)...)
-	return buf
+
+	path := o.Path
+	if path == "" {
+		path = o.URL
+	}
+	if path == "" {
+		return buf
+	}
+	if path[0] != '/' {
+		buf = append(buf, "%2F"...)
+	}
+	return append(buf, url.PathEscape(path)...)
 }
 
 type overlayParseState struct {
@@ -379,7 +393,7 @@ func (s *overlayParseState) parseOverlay() (*Overlay, error) {
 			return nil, err
 		}
 	}
-	s.overlay.URL = s.s[s.idx:]
+	s.overlay.Path = s.s[s.idx:]
 	return s.overlay, nil
 }
 
