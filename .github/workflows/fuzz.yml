@@ -1,6 +1,8 @@
 name: "fuzz"
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "36 2 * * 1,4"
 
 permissions:
   contents: read
@@ -37,4 +39,4 @@ jobs:
         with:
           packages: ${{ matrix.package }}
           fuzz-regexp: ${{ matrix.func }}
-          fuzz-time: "55m"
+          fuzz-time: "355m"
