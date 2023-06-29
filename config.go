@@ -904,7 +904,10 @@ func (s *parseState) parseConfig() (*Config, string, error) {
 			}
 			break
 		}
-		value := s.getValue()
+		value, err := s.getValue()
+		if err != nil {
+			return nil, "", err
+		}
 		s.skipComma()
 		if err := s.setValue(key, value); err != nil {
 			return nil, "", err
@@ -939,7 +942,10 @@ func (s *parseState) parseConfigAndVerifySignature(secret []byte) (*Config, stri
 			}
 			break
 		}
-		value := s.getValue()
+		value, err := s.getValue()
+		if err != nil {
+			return nil, "", err
+		}
 		s.skipComma()
 		if err := s.setValue(key, value); err != nil {
 			return nil, "", err
@@ -1408,7 +1414,7 @@ func (s *parseState) getKey() (key string, foundEqual bool) {
 }
 
 // getValue returns the value at the current index and advances the index.
-func (s *parseState) getValue() string {
+func (s *parseState) getValue() (string, error) {
 	var nest int
 	i := s.idx
 LOOP:
@@ -1432,9 +1438,12 @@ LOOP:
 			}
 		}
 	}
+	if nest != 0 {
+		return "", errors.New("imageflux: invalid value: parenthesis is not closed")
+	}
 	value := s.s[s.idx:i]
 	s.idx = i
-	return value
+	return value, nil
 }
 
 // skipComma skips the ',' at the current index and returns true if it was found.
