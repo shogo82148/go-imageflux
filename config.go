@@ -1080,7 +1080,7 @@ func (s *parseState) setValue(key, value string) error {
 	// DevicePixelRatio
 	case "dpr":
 		dpr, err := strconv.ParseFloat(value, 64)
-		if err != nil || dpr <= 0 || math.IsNaN(dpr) {
+		if err != nil || dpr <= 0 || math.IsNaN(dpr) || math.IsInf(dpr, 0) {
 			return fmt.Errorf("imageflux: invalid device pixel ratio %q", value)
 		}
 		s.config.DevicePixelRatio = dpr
