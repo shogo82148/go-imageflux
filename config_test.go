@@ -510,6 +510,7 @@ var parseConfigCases = []struct {
 	want  *Config
 	rest  string
 }{
+	// resizing
 	{
 		input: "",
 		want:  &Config{},
@@ -527,6 +528,20 @@ var parseConfigCases = []struct {
 			Height: 200,
 		},
 	},
+
+	// DisableEnlarge
+	{
+		input: "u=0",
+		want: &Config{
+			DisableEnlarge: true,
+		},
+	},
+	{
+		input: "u=1",
+		want:  &Config{},
+	},
+
+	// AspectMode
 	{
 		input: "a=3",
 		want: &Config{
@@ -945,5 +960,55 @@ func TestParseConfig_expired(t *testing.T) {
 	_, _, err := ParseConfig("expires=2023-06-24T09:23:00Z")
 	if !errors.Is(err, ErrExpired) {
 		t.Errorf("want ErrExpired, got %s", err)
+	}
+}
+
+var parseConfigErrorCases = []string{
+	// Width
+	"w=",
+	"w=-1",
+	"w=nan",
+	"w=inf",
+
+	// Height
+	"h=",
+	"h=-1",
+	"h=nan",
+	"h=inf",
+
+	// DisableEnlarge
+	"u=-1",
+	"u=2",
+
+	// AspectMode
+	"a=-1",
+	"a=5",
+	"a=nan",
+	"a=inf",
+
+	// DevicePixelRatio
+	"dpr=-1",
+	"dpr=nan",
+	"dpr=inf",
+	"dpr=err",
+
+	// InputClip
+	"ic=0",
+	"ic=0:0",
+	"ic=0:0:0",
+	"ic=0:0:0:0",
+	"ic=0:0:0:0:0",
+	"ic=A:0:0:0",
+	"ic=0:A:0:0",
+	"ic=0:0:A:0",
+	"ic=0:0:0:A",
+}
+
+func TestParseConfig_error(t *testing.T) {
+	for _, c := range parseConfigErrorCases {
+		_, _, err := ParseConfig(c)
+		if err == nil {
+			t.Errorf("%q: expected error", c)
+		}
 	}
 }

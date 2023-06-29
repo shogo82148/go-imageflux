@@ -14,6 +14,9 @@ func FuzzParseConfig(f *testing.F) {
 	for _, c := range parseConfigCases {
 		f.Add(c.input)
 	}
+	for _, c := range parseConfigErrorCases {
+		f.Add(c)
+	}
 
 	f.Fuzz(func(t *testing.T, s string) {
 		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
