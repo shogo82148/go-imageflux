@@ -1002,6 +1002,29 @@ var parseConfigErrorCases = []string{
 	"ic=0:A:0:0",
 	"ic=0:0:A:0",
 	"ic=0:0:0:A",
+
+	// Unsharp
+	"unsharp=",
+	"unsharp=1",
+	"unsharp=-1x1",
+	"unsharp=x1",
+	"unsharp=1xErr",
+	"unsharp=1xNaN",
+	"unsharp=1xInf",
+	"unsharp=1x-Inf",
+	"unsharp=1x1+",
+	"unsharp=1xErr+",
+	"unsharp=1x1+1",
+	"unsharp=1x1+NaN+0.5",
+	"unsharp=1x1+Inf+0.5",
+	"unsharp=1x1+Err+0.5",
+	"unsharp=1x1+1+0",
+	"unsharp=1x1+1+1",
+	"unsharp=1x1+1+-1",
+	"unsharp=1x1+1+NaN",
+	"unsharp=1x1+1+Inf",
+	"unsharp=1x1+1+-Inf",
+	"unsharp=1x1+1+Err",
 }
 
 func TestParseConfig_error(t *testing.T) {

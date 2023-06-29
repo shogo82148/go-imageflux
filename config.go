@@ -195,7 +195,7 @@ func parseUnsharp(s string) (Unsharp, error) {
 		if err != nil {
 			return u, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
 		}
-		if sigma <= 0 {
+		if sigma <= 0 || math.IsNaN(sigma) || math.IsInf(sigma, 0) {
 			return u, errors.New("imageflux: invalid unsharp format")
 		}
 		u.Sigma = sigma
@@ -205,7 +205,7 @@ func parseUnsharp(s string) (Unsharp, error) {
 	if err != nil {
 		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
 	}
-	if sigma == 0 {
+	if sigma <= 0 || math.IsNaN(sigma) || math.IsInf(sigma, 0) {
 		return u, errors.New("imageflux: invalid unsharp format")
 	}
 	u.Sigma = sigma
@@ -220,6 +220,9 @@ func parseUnsharp(s string) (Unsharp, error) {
 	if err != nil {
 		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
 	}
+	if math.IsNaN(gain) || math.IsInf(gain, 0) {
+		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
+	}
 	u.Gain = gain
 	s = s[idx+1:]
 
@@ -228,7 +231,7 @@ func parseUnsharp(s string) (Unsharp, error) {
 	if err != nil {
 		return Unsharp{}, fmt.Errorf("imageflux: invalid unsharp format: %w", err)
 	}
-	if threshold <= 0 || threshold >= 1 {
+	if threshold <= 0 || threshold >= 1 || math.IsNaN(threshold) {
 		return Unsharp{}, errors.New("imageflux: invalid unsharp format")
 	}
 	u.Threshold = threshold
