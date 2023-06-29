@@ -969,6 +969,9 @@ var parseConfigErrorCases = []string{
 	"w=-1",
 	"w=nan",
 	"w=inf",
+	"w=(",
+	"w=)",
+	"w=(/)",
 
 	// Height
 	"h=",
