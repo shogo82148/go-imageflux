@@ -881,6 +881,12 @@ var parseConfigCases = []struct {
 		},
 	},
 	{
+		input: "invert=0",
+		want: &Config{
+			Invert: false,
+		},
+	},
+	{
 		input: "invert=1",
 		want: &Config{
 			Invert: true,
@@ -1166,6 +1172,27 @@ var parseConfigErrorCases = []string{
 	"blur=1xNaN",
 	"blur=1xInf",
 	"blur=1x-Inf",
+
+	// GrayScale
+	"grayscale=ERR",
+	"grayscale=-1",
+	"grayscale=101",
+
+	// Sepia
+	"sepia=ERR",
+	"sepia=-1",
+	"sepia=101",
+
+	// Brightness
+	"brightness=ERR",
+	"brightness=-1",
+
+	// Contrast
+	"contrast=ERR",
+	"contrast=-1",
+
+	// Invert
+	"invert=ERR",
 }
 
 func TestParseConfig_error(t *testing.T) {
