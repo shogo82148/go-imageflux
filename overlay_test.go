@@ -273,8 +273,8 @@ func TestParseOverlay(t *testing.T) {
 		{
 			input: "icr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
 			want: &Overlay{
-				InputClipRatio: image.Rect(25, 25, 75, 75),
-				ClipMax:        image.Pt(100, 100),
+				InputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+				ClipMax:        image.Pt(65536, 65536),
 				Path:           "/images/1.png",
 			},
 		},
@@ -304,8 +304,8 @@ func TestParseOverlay(t *testing.T) {
 		{
 			input: "ocr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
 			want: &Overlay{
-				OutputClipRatio: image.Rect(25, 25, 75, 75),
-				ClipMax:         image.Pt(100, 100),
+				OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+				ClipMax:         image.Pt(65536, 65536),
 				Path:            "/images/1.png",
 			},
 		},
@@ -313,8 +313,8 @@ func TestParseOverlay(t *testing.T) {
 			// for backward compatibility, you can use "cr" instead of "ocr".
 			input: "cr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
 			want: &Overlay{
-				OutputClipRatio: image.Rect(25, 25, 75, 75),
-				ClipMax:         image.Pt(100, 100),
+				OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+				ClipMax:         image.Pt(65536, 65536),
 				Path:            "/images/1.png",
 			},
 		},

@@ -565,8 +565,8 @@ var parseConfigCases = []struct {
 	{
 		input: "icr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			InputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:        image.Pt(100, 100),
+			InputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:        image.Pt(65536, 65536),
 		},
 	},
 	{
@@ -592,16 +592,16 @@ var parseConfigCases = []struct {
 	{
 		input: "ocr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			OutputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:         image.Pt(100, 100),
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
 		},
 	},
 	{
 		// for backward compatibility, you can use "cr" instead of "ocr".
 		input: "cr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			OutputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:         image.Pt(100, 100),
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
 		},
 	},
 	{
