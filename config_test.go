@@ -767,6 +767,18 @@ var parseConfigCases = []struct {
 		},
 	},
 	{
+		input: "o=1",
+		want: &Config{
+			DisableOptimization: false,
+		},
+	},
+	{
+		input: "lossless=0",
+		want: &Config{
+			Lossless: false,
+		},
+	},
+	{
 		input: "lossless=1",
 		want: &Config{
 			Lossless: true,
@@ -1101,6 +1113,21 @@ var parseConfigErrorCases = []string{
 
 	// Through
 	"through=ERR",
+
+	// Overlays
+	"l=",
+	"l=123",
+
+	// Quality
+	"q=ERR",
+	"q=-1",
+	"q=101",
+
+	// DisableOptimization
+	"o=ERR",
+
+	// Lossless
+	"lossless=ERR",
 
 	// Unsharp
 	"unsharp=",
