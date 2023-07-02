@@ -1084,6 +1084,11 @@ var parseConfigErrorCases = []string{
 	"g=-1",
 	"g=10",
 
+	// Background
+	"b=ERR",
+	"b=RRGGBB",
+	"b=RRGGBBAA",
+
 	// Unsharp
 	"unsharp=",
 	"unsharp=1",
