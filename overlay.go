@@ -336,21 +336,22 @@ func ParseOverlay(s string) (*Overlay, error) {
 
 // getKey returns the key at the current index and advances the index.
 func (s *overlayParseState) getKey() (key string, foundEqual bool) {
-	for i := s.idx; i < len(s.s); i++ {
+	i := s.idx
+	for ; i < len(s.s); i++ {
 		switch s.s[i] {
 		case '=':
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			foundEqual = true
 			return
-		case '/':
+		case '/', ',':
 			key = s.s[s.idx:i]
 			s.idx = i
 			foundEqual = false
 			return
 		}
 	}
-	return "", false
+	return s.s[s.idx:i], false
 }
 
 // getValue returns the value at the current index and advances the index.
@@ -464,9 +465,6 @@ func (s *overlayParseState) setValue(key, value string) error {
 	// InputClipRatio
 	case "icr":
 		v0, v1, v2, v3, ok := split4(value)
-		if !ok {
-			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
-		}
 		minX, err0 := strconv.ParseFloat(v0, 64)
 		minY, err1 := strconv.ParseFloat(v1, 64)
 		maxX, err2 := strconv.ParseFloat(v2, 64)
@@ -477,7 +475,9 @@ func (s *overlayParseState) setValue(key, value string) error {
 			int(math.Round(maxX*rectangleScale)),
 			int(math.Round(maxY*rectangleScale)),
 		)
-		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || icr == zr {
+		ok = ok && err0 == nil && err1 == nil && err2 == nil && err3 == nil && icr != zr
+		ok = ok && minX >= 0 && minX <= 1 && minY >= 0 && minY <= 1 && maxX >= 0 && maxX <= 1 && maxY >= 0 && maxY <= 1
+		if !ok {
 			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
 		}
 		s.overlay.InputClipRatio = icr
@@ -513,9 +513,6 @@ func (s *overlayParseState) setValue(key, value string) error {
 	// OutputClipRatio
 	case "ocr", "cr":
 		v0, v1, v2, v3, ok := split4(value)
-		if !ok {
-			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
-		}
 		minX, err0 := strconv.ParseFloat(v0, 64)
 		minY, err1 := strconv.ParseFloat(v1, 64)
 		maxX, err2 := strconv.ParseFloat(v2, 64)
@@ -526,7 +523,9 @@ func (s *overlayParseState) setValue(key, value string) error {
 			int(math.Round(maxX*rectangleScale)),
 			int(math.Round(maxY*rectangleScale)),
 		)
-		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ocr == zr {
+		ok = ok && err0 == nil && err1 == nil && err2 == nil && err3 == nil && ocr != zr
+		ok = ok && minX >= 0 && minX <= 1 && minY >= 0 && minY <= 1 && maxX >= 0 && maxX <= 1 && maxY >= 0 && maxY <= 1
+		if !ok {
 			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
 		}
 		s.overlay.OutputClipRatio = ocr

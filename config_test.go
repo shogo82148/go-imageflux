@@ -767,6 +767,18 @@ var parseConfigCases = []struct {
 		},
 	},
 	{
+		input: "o=1",
+		want: &Config{
+			DisableOptimization: false,
+		},
+	},
+	{
+		input: "lossless=0",
+		want: &Config{
+			Lossless: false,
+		},
+	},
+	{
 		input: "lossless=1",
 		want: &Config{
 			Lossless: true,
@@ -869,6 +881,12 @@ var parseConfigCases = []struct {
 		},
 	},
 	{
+		input: "invert=0",
+		want: &Config{
+			Invert: false,
+		},
+	},
+	{
 		input: "invert=1",
 		want: &Config{
 			Invert: true,
@@ -964,6 +982,10 @@ func TestParseConfig_expired(t *testing.T) {
 }
 
 var parseConfigErrorCases = []string{
+	// common errors
+	"w=1,invalid",
+	"invalid,w=1",
+
 	// Width
 	"w=",
 	"w=-1",
@@ -1029,8 +1051,98 @@ var parseConfigErrorCases = []string{
 	"icr=0:2:0:0",
 	"icr=0:0:-1:0",
 	"icr=0:0:2:0",
-	"icr=0:0:-1:0",
-	"icr=0:0:2:0",
+	"icr=0:0:0:-1",
+	"icr=0:0:0:2",
+
+	// InputOrigin
+	"ig=ERR",
+	"ig=-1",
+	"ig=10",
+
+	// OutputClip
+	"oc=0",
+	"oc=0:0",
+	"oc=0:0:0",
+	"oc=0:0:0:0",
+	"oc=0:0:0:0:0",
+	"oc=ERR:0:0:0",
+	"oc=0:ERR:0:0",
+	"oc=0:0:ERR:0",
+	"oc=0:0:0:ERR",
+
+	// OutputClipRatio
+	"ocr=0",
+	"ocr=0:0",
+	"ocr=0:0:0:0",
+	"ocr=0:0:0:0:0",
+	"ocr=ERR:0:0:0",
+	"ocr=0:ERR:0:0",
+	"ocr=0:0:ERR:0",
+	"ocr=0:0:0:ERR",
+	"ocr=MaN:0:0:0",
+	"ocr=0:NaN:0:0",
+	"ocr=0:0:NaN:0",
+	"ocr=0:0:0:NaN",
+	"ocr=Inf:0:0:0",
+	"ocr=0:Inf:0:0",
+	"ocr=0:0:Inf:0",
+	"ocr=0:0:0:Inf",
+	"ocr=-1:0:0:0",
+	"ocr=2:0:0:0",
+	"ocr=0:-1:0:0",
+	"ocr=0:2:0:0",
+	"ocr=0:0:-1:0",
+	"ocr=0:0:2:0",
+	"ocr=0:0:0:-1",
+	"ocr=0:0:0:2",
+
+	// OutputOrigin
+	"og=ERR",
+	"og=-1",
+	"og=10",
+
+	// Origin
+	"g=ERR",
+	"g=-1",
+	"g=10",
+
+	// Background
+	"b=ERR",
+	"b=RRGGBB",
+	"b=RRGGBBAA",
+
+	// InputRotate
+	"ir=ERR",
+	"ir=0",
+	"ir=9",
+
+	// OutputRotate
+	"or=ERR",
+	"or=0",
+	"or=9",
+
+	// Through
+	"through=ERR",
+
+	// Overlays
+	"l=",
+	"l=123",
+
+	// Quality
+	"q=ERR",
+	"q=-1",
+	"q=101",
+
+	// DisableOptimization
+	"o=ERR",
+
+	// Lossless
+	"lossless=ERR",
+
+	// ExifOption
+	"s=ERR",
+	"s=0",
+	"s=3",
 
 	// Unsharp
 	"unsharp=",
@@ -1054,6 +1166,40 @@ var parseConfigErrorCases = []string{
 	"unsharp=1x1+1+Inf",
 	"unsharp=1x1+1+-Inf",
 	"unsharp=1x1+1+Err",
+
+	// Blur
+	"blur=",
+	"blur=1",
+	"blur=-1x1",
+	"blur=x1",
+	"blur=1xErr",
+	"blur=1xNaN",
+	"blur=1xInf",
+	"blur=1x-Inf",
+
+	// GrayScale
+	"grayscale=ERR",
+	"grayscale=-1",
+	"grayscale=101",
+
+	// Sepia
+	"sepia=ERR",
+	"sepia=-1",
+	"sepia=101",
+
+	// Brightness
+	"brightness=ERR",
+	"brightness=-1",
+
+	// Contrast
+	"contrast=ERR",
+	"contrast=-1",
+
+	// Invert
+	"invert=ERR",
+
+	// Expires
+	"expires=ERR",
 }
 
 func TestParseConfig_error(t *testing.T) {
