@@ -1129,6 +1129,11 @@ var parseConfigErrorCases = []string{
 	// Lossless
 	"lossless=ERR",
 
+	// ExifOption
+	"s=ERR",
+	"s=0",
+	"s=3",
+
 	// Unsharp
 	"unsharp=",
 	"unsharp=1",
