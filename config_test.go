@@ -1089,6 +1089,19 @@ var parseConfigErrorCases = []string{
 	"b=RRGGBB",
 	"b=RRGGBBAA",
 
+	// InputRotate
+	"ir=ERR",
+	"ir=0",
+	"ir=9",
+
+	// OutputRotate
+	"or=ERR",
+	"or=0",
+	"or=9",
+
+	// Through
+	"through=ERR",
+
 	// Unsharp
 	"unsharp=",
 	"unsharp=1",

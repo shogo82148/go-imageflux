@@ -547,6 +547,8 @@ func parseThrough(s string) (Through, error) {
 			t |= ThroughGIF
 		case "webp":
 			t |= ThroughWebP
+		default:
+			return 0, fmt.Errorf("imageflux: unknown through format: %s", v)
 		}
 	}
 	return t, nil
