@@ -1193,6 +1193,9 @@ var parseConfigErrorCases = []string{
 
 	// Invert
 	"invert=ERR",
+
+	// Expires
+	"expires=ERR",
 }
 
 func TestParseConfig_error(t *testing.T) {
