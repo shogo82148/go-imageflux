@@ -1029,8 +1029,60 @@ var parseConfigErrorCases = []string{
 	"icr=0:2:0:0",
 	"icr=0:0:-1:0",
 	"icr=0:0:2:0",
-	"icr=0:0:-1:0",
-	"icr=0:0:2:0",
+	"icr=0:0:0:-1",
+	"icr=0:0:0:2",
+
+	// InputOrigin
+	"ig=ERR",
+	"ig=-1",
+	"ig=10",
+
+	// OutputClip
+	"oc=0",
+	"oc=0:0",
+	"oc=0:0:0",
+	"oc=0:0:0:0",
+	"oc=0:0:0:0:0",
+	"oc=ERR:0:0:0",
+	"oc=0:ERR:0:0",
+	"oc=0:0:ERR:0",
+	"oc=0:0:0:ERR",
+
+	// OutputClipRatio
+	"ocr=0",
+	"ocr=0:0",
+	"ocr=0:0:0:0",
+	"ocr=0:0:0:0:0",
+	"ocr=ERR:0:0:0",
+	"ocr=0:ERR:0:0",
+	"ocr=0:0:ERR:0",
+	"ocr=0:0:0:ERR",
+	"ocr=MaN:0:0:0",
+	"ocr=0:NaN:0:0",
+	"ocr=0:0:NaN:0",
+	"ocr=0:0:0:NaN",
+	"ocr=Inf:0:0:0",
+	"ocr=0:Inf:0:0",
+	"ocr=0:0:Inf:0",
+	"ocr=0:0:0:Inf",
+	"ocr=-1:0:0:0",
+	"ocr=2:0:0:0",
+	"ocr=0:-1:0:0",
+	"ocr=0:2:0:0",
+	"ocr=0:0:-1:0",
+	"ocr=0:0:2:0",
+	"ocr=0:0:0:-1",
+	"ocr=0:0:0:2",
+
+	// OutputOrigin
+	"og=ERR",
+	"og=-1",
+	"og=10",
+
+	// Origin
+	"g=ERR",
+	"g=-1",
+	"g=10",
 
 	// Unsharp
 	"unsharp=",
