@@ -982,6 +982,10 @@ func TestParseConfig_expired(t *testing.T) {
 }
 
 var parseConfigErrorCases = []string{
+	// common errors
+	"w=1,invalid",
+	"invalid,w=1",
+
 	// Width
 	"w=",
 	"w=-1",

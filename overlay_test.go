@@ -450,3 +450,146 @@ func TestParseOverlay(t *testing.T) {
 		}
 	}
 }
+
+var parseOverlayErrorCases = []string{
+	// common errors
+	"w=1,invalid",
+
+	// Width
+	"w=",
+	"w=-1",
+	"w=nan",
+	"w=inf",
+	"w=(",
+	"w=)",
+	"w=(/)",
+
+	// Height
+	"h=",
+	"h=-1",
+	"h=nan",
+	"h=inf",
+
+	// DisableEnlarge
+	"u=-1",
+	"u=2",
+
+	// AspectMode
+	"a=-1",
+	"a=5",
+	"a=nan",
+	"a=inf",
+
+	// InputClip
+	"ic=0",
+	"ic=0:0",
+	"ic=0:0:0",
+	"ic=0:0:0:0",
+	"ic=0:0:0:0:0",
+	"ic=ERR:0:0:0",
+	"ic=0:ERR:0:0",
+	"ic=0:0:ERR:0",
+	"ic=0:0:0:ERR",
+
+	// InputClipRatio
+	"icr=0",
+	"icr=0:0",
+	"icr=0:0:0:0",
+	"icr=0:0:0:0:0",
+	"icr=ERR:0:0:0",
+	"icr=0:ERR:0:0",
+	"icr=0:0:ERR:0",
+	"icr=0:0:0:ERR",
+	"icr=MaN:0:0:0",
+	"icr=0:NaN:0:0",
+	"icr=0:0:NaN:0",
+	"icr=0:0:0:NaN",
+	"icr=Inf:0:0:0",
+	"icr=0:Inf:0:0",
+	"icr=0:0:Inf:0",
+	"icr=0:0:0:Inf",
+	"icr=-1:0:0:0",
+	"icr=2:0:0:0",
+	"icr=0:-1:0:0",
+	"icr=0:2:0:0",
+	"icr=0:0:-1:0",
+	"icr=0:0:2:0",
+	"icr=0:0:0:-1",
+	"icr=0:0:0:2",
+
+	// InputOrigin
+	"ig=ERR",
+	"ig=-1",
+	"ig=10",
+
+	// OutputClip
+	"oc=0",
+	"oc=0:0",
+	"oc=0:0:0",
+	"oc=0:0:0:0",
+	"oc=0:0:0:0:0",
+	"oc=ERR:0:0:0",
+	"oc=0:ERR:0:0",
+	"oc=0:0:ERR:0",
+	"oc=0:0:0:ERR",
+
+	// OutputClipRatio
+	"ocr=0",
+	"ocr=0:0",
+	"ocr=0:0:0:0",
+	"ocr=0:0:0:0:0",
+	"ocr=ERR:0:0:0",
+	"ocr=0:ERR:0:0",
+	"ocr=0:0:ERR:0",
+	"ocr=0:0:0:ERR",
+	"ocr=MaN:0:0:0",
+	"ocr=0:NaN:0:0",
+	"ocr=0:0:NaN:0",
+	"ocr=0:0:0:NaN",
+	"ocr=Inf:0:0:0",
+	"ocr=0:Inf:0:0",
+	"ocr=0:0:Inf:0",
+	"ocr=0:0:0:Inf",
+	"ocr=-1:0:0:0",
+	"ocr=2:0:0:0",
+	"ocr=0:-1:0:0",
+	"ocr=0:2:0:0",
+	"ocr=0:0:-1:0",
+	"ocr=0:0:2:0",
+	"ocr=0:0:0:-1",
+	"ocr=0:0:0:2",
+
+	// OutputOrigin
+	"og=ERR",
+	"og=-1",
+	"og=10",
+
+	// Origin
+	"g=ERR",
+	"g=-1",
+	"g=10",
+
+	// Background
+	"b=ERR",
+	"b=RRGGBB",
+	"b=RRGGBBAA",
+
+	// InputRotate
+	"ir=ERR",
+	"ir=0",
+	"ir=9",
+
+	// OutputRotate
+	"or=ERR",
+	"or=0",
+	"or=9",
+}
+
+func TestParseOverlay_error(t *testing.T) {
+	for _, c := range parseOverlayErrorCases {
+		_, err := ParseOverlay(c)
+		if err == nil {
+			t.Errorf("%q: expected error", c)
+		}
+	}
+}

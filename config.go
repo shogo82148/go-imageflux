@@ -272,7 +272,7 @@ func parseBlur(s string) (Blur, error) {
 	if err != nil {
 		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
 	}
-	if sigma <= 0 {
+	if sigma <= 0 || math.IsNaN(sigma) || math.IsInf(sigma, 0) {
 		return Blur{}, errors.New("imageflux: invalid blur format")
 	}
 
@@ -1397,21 +1397,22 @@ func (s *parseState) setValue(key, value string) error {
 
 // getKey returns the key at the current index and advances the index.
 func (s *parseState) getKey() (key string, foundEqual bool) {
-	for i := s.idx; i < len(s.s); i++ {
+	i := s.idx
+	for ; i < len(s.s); i++ {
 		switch s.s[i] {
 		case '=':
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			foundEqual = true
 			return
-		case '/':
+		case '/', ',':
 			key = s.s[s.idx:i]
 			s.idx = i
 			foundEqual = false
 			return
 		}
 	}
-	return "", false
+	return s.s[s.idx:i], false
 }
 
 // getValue returns the value at the current index and advances the index.
