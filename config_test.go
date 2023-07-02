@@ -1156,6 +1156,16 @@ var parseConfigErrorCases = []string{
 	"unsharp=1x1+1+Inf",
 	"unsharp=1x1+1+-Inf",
 	"unsharp=1x1+1+Err",
+
+	// Blur
+	"blur=",
+	"blur=1",
+	"blur=-1x1",
+	"blur=x1",
+	"blur=1xErr",
+	"blur=1xNaN",
+	"blur=1xInf",
+	"blur=1x-Inf",
 }
 
 func TestParseConfig_error(t *testing.T) {
