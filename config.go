@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const rectangleScale = 100
+const rectangleScale = 65536
 
 // nowFunc is for testing.
 var nowFunc = time.Now
@@ -1113,9 +1113,6 @@ func (s *parseState) setValue(key, value string) error {
 	// InputClipRatio
 	case "icr":
 		v0, v1, v2, v3, ok := split4(value)
-		if !ok {
-			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
-		}
 		minX, err0 := strconv.ParseFloat(v0, 64)
 		minY, err1 := strconv.ParseFloat(v1, 64)
 		maxX, err2 := strconv.ParseFloat(v2, 64)
@@ -1126,7 +1123,9 @@ func (s *parseState) setValue(key, value string) error {
 			int(math.Round(maxX*rectangleScale)),
 			int(math.Round(maxY*rectangleScale)),
 		)
-		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || icr == zr {
+		ok = ok && err0 == nil && err1 == nil && err2 == nil && err3 == nil && icr != zr
+		ok = ok && minX >= 0 && minX <= 1 && minY >= 0 && minY <= 1 && maxX >= 0 && maxX <= 1 && maxY >= 0 && maxY <= 1
+		if !ok {
 			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
 		}
 		s.config.InputClipRatio = icr
@@ -1162,9 +1161,6 @@ func (s *parseState) setValue(key, value string) error {
 	// OutputClipRatio
 	case "ocr", "cr":
 		v0, v1, v2, v3, ok := split4(value)
-		if !ok {
-			return fmt.Errorf("imageflux: invalid output clip ratio %q", value)
-		}
 		minX, err0 := strconv.ParseFloat(v0, 64)
 		minY, err1 := strconv.ParseFloat(v1, 64)
 		maxX, err2 := strconv.ParseFloat(v2, 64)
@@ -1175,9 +1171,12 @@ func (s *parseState) setValue(key, value string) error {
 			int(math.Round(maxX*rectangleScale)),
 			int(math.Round(maxY*rectangleScale)),
 		)
-		if err0 != nil || err1 != nil || err2 != nil || err3 != nil || ocr == zr {
+		ok = ok && err0 == nil && err1 == nil && err2 == nil && err3 == nil && ocr != zr
+		ok = ok && minX >= 0 && minX <= 1 && minY >= 0 && minY <= 1 && maxX >= 0 && maxX <= 1 && maxY >= 0 && maxY <= 1
+		if !ok {
 			return fmt.Errorf("imageflux: invalid input clip ratio %q", value)
 		}
+
 		s.config.OutputClipRatio = ocr
 		s.config.ClipMax = image.Pt(rectangleScale, rectangleScale)
 

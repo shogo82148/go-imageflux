@@ -565,8 +565,8 @@ var parseConfigCases = []struct {
 	{
 		input: "icr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			InputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:        image.Pt(100, 100),
+			InputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:        image.Pt(65536, 65536),
 		},
 	},
 	{
@@ -592,16 +592,16 @@ var parseConfigCases = []struct {
 	{
 		input: "ocr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			OutputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:         image.Pt(100, 100),
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
 		},
 	},
 	{
 		// for backward compatibility, you can use "cr" instead of "ocr".
 		input: "cr=0.25:0.25:0.75:0.75",
 		want: &Config{
-			OutputClipRatio: image.Rect(25, 25, 75, 75),
-			ClipMax:         image.Pt(100, 100),
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
 		},
 	},
 	{
@@ -1001,10 +1001,36 @@ var parseConfigErrorCases = []string{
 	"ic=0:0:0",
 	"ic=0:0:0:0",
 	"ic=0:0:0:0:0",
-	"ic=A:0:0:0",
-	"ic=0:A:0:0",
-	"ic=0:0:A:0",
-	"ic=0:0:0:A",
+	"ic=ERR:0:0:0",
+	"ic=0:ERR:0:0",
+	"ic=0:0:ERR:0",
+	"ic=0:0:0:ERR",
+
+	// InputClipRatio
+	"icr=0",
+	"icr=0:0",
+	"icr=0:0:0:0",
+	"icr=0:0:0:0:0",
+	"icr=ERR:0:0:0",
+	"icr=0:ERR:0:0",
+	"icr=0:0:ERR:0",
+	"icr=0:0:0:ERR",
+	"icr=MaN:0:0:0",
+	"icr=0:NaN:0:0",
+	"icr=0:0:NaN:0",
+	"icr=0:0:0:NaN",
+	"icr=Inf:0:0:0",
+	"icr=0:Inf:0:0",
+	"icr=0:0:Inf:0",
+	"icr=0:0:0:Inf",
+	"icr=-1:0:0:0",
+	"icr=2:0:0:0",
+	"icr=0:-1:0:0",
+	"icr=0:2:0:0",
+	"icr=0:0:-1:0",
+	"icr=0:0:2:0",
+	"icr=0:0:-1:0",
+	"icr=0:0:2:0",
 
 	// Unsharp
 	"unsharp=",
