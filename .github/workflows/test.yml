@@ -9,6 +9,7 @@ jobs:
       matrix:
         go:
           - "1"
+          - "1.21.0-rc.3"
           - "1.20"
           - "1.19"
           - "1.18"
@@ -16,6 +17,12 @@ jobs:
           - "1.16"
           - "1.15"
           - "1.14"
+        goexperiment: [""]
+        include:
+          # test with GOEXPERIMENT=loopvar
+          # https://github.com/golang/go/wiki/LoopvarExperiment
+          - go: "1.21.0-rc.3"
+            goexperiment: "loopvar"
     steps:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v4
