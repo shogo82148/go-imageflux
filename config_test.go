@@ -1128,6 +1128,14 @@ var parseConfigErrorCases = []string{
 	"l=",
 	"l=123",
 
+	// format
+	"f=",
+	"f=:",
+	"f=png:",
+	"f=:png",
+	"f=webp::png",
+	"f=PNG",
+
 	// Quality
 	"q=ERR",
 	"q=-1",
@@ -1200,6 +1208,9 @@ var parseConfigErrorCases = []string{
 
 	// Expires
 	"expires=ERR",
+
+	// https://github.com/shogo82148/go-imageflux/pull/48
+	"s=1%2Cf=%2C",
 }
 
 func TestParseConfig_error(t *testing.T) {

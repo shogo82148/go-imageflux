@@ -420,6 +420,29 @@ func (f Format) String() string {
 	return string(f)
 }
 
+func newFormat(s string) (Format, error) {
+	// validate the input with the regexp /[a-z]+(:[a-z]+)*/.
+	colon := true
+	for _, ch := range []byte(s) {
+		if ch == ':' {
+			if colon {
+				// double colons are detected. it's an error.
+				return "", fmt.Errorf("imageflux: invalid format %q", s)
+			}
+			colon = true
+			continue
+		}
+		if ch < 'a' || ch > 'z' {
+			return "", fmt.Errorf("imageflux: invalid format %q", s)
+		}
+		colon = false
+	}
+	if colon {
+		return "", fmt.Errorf("imageflux: invalid format %q", s)
+	}
+	return Format(s), nil
+}
+
 // Rotate rotates the image.
 type Rotate int
 
@@ -1278,7 +1301,11 @@ func (s *parseState) setValue(key, value string) error {
 
 	// Format
 	case "f":
-		s.config.Format = Format(value)
+		f, err := newFormat(value)
+		if err != nil {
+			return err
+		}
+		s.config.Format = f
 
 	// Quality
 	case "q":
