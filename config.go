@@ -1418,7 +1418,7 @@ func (s *parseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid expires %q", value)
 		}
-		if !expires.Before(nowFunc()) {
+		if !expires.After(nowFunc()) {
 			return ErrExpired
 		}
 		s.config.Expires = expires
