@@ -894,9 +894,9 @@ var parseConfigCases = []struct {
 	},
 
 	{
-		input: "expires=2023-06-24T09:22:59Z",
+		input: "expires=2023-06-24T09:23:01Z",
 		want: &Config{
-			Expires: time.Date(2023, 6, 24, 9, 22, 59, 0, time.UTC),
+			Expires: time.Date(2023, 6, 24, 9, 23, 01, 0, time.UTC),
 		},
 	},
 
