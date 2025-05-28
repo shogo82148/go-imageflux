@@ -894,8 +894,10 @@ var parseConfigCases = []struct {
 	},
 
 	{
-		input: "expires=2023-06-24T09:22:59Z",
-		want:  &Config{},
+		input: "expires=2023-06-24T09:23:01Z",
+		want: &Config{
+			Expires: time.Date(2023, 6, 24, 9, 23, 01, 0, time.UTC),
+		},
 	},
 
 	{
@@ -975,9 +977,14 @@ func TestParseConfig(t *testing.T) {
 func TestParseConfig_expired(t *testing.T) {
 	fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
 
-	_, _, err := ParseConfig("expires=2023-06-24T09:23:00Z")
+	_, _, err := ParseConfig("expires=2023-06-24T09:23:01Z")
+	if err != nil {
+		t.Errorf("want no error, got %s", err)
+	}
+
+	_, _, err = ParseConfig("expires=2023-06-24T09:23:00Z")
 	if !errors.Is(err, ErrExpired) {
-		t.Errorf("want ErrExpired, got %s", err)
+		t.Errorf("want ErrExpired, got %v", err)
 	}
 }
 

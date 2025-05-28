@@ -33,6 +33,9 @@ type Config struct {
 	// Height is height in pixel of the scaled image.
 	Height int
 
+	// Expires is the time when the image expires.
+	Expires time.Time
+
 	// DisableEnlarge disables enlarge.
 	DisableEnlarge bool
 
@@ -651,6 +654,11 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 	if c.Height != 0 {
 		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(c.Height), 10)
+		buf = appendComma(buf, escapeComma)
+	}
+	if !c.Expires.IsZero() {
+		buf = append(buf, "expires="...)
+		buf = c.Expires.In(time.UTC).AppendFormat(buf, time.RFC3339)
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableEnlarge {
@@ -1404,14 +1412,16 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid invert %q", value)
 		}
 
+	// Expires
 	case "expires":
 		expires, err := time.Parse(time.RFC3339, value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid expires %q", value)
 		}
-		if !expires.Before(nowFunc()) {
+		if !expires.After(nowFunc()) {
 			return ErrExpired
 		}
+		s.config.Expires = expires
 
 	case "sig":
 		// if signature is already set, ignore this
