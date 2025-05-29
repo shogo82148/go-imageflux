@@ -151,8 +151,8 @@ type Config struct {
 	// Invert inverts the image if it is true.
 	Invert bool
 
-	// Text is the text to be used for the image.
-	Text []*Text
+	// Texts is the text to be used for the image.
+	Texts []*Text
 }
 
 // Unsharp is an unsharp filter config.
