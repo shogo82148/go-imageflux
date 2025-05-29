@@ -150,6 +150,9 @@ type Config struct {
 
 	// Invert inverts the image if it is true.
 	Invert bool
+
+	// Text is the text to be used for the image.
+	Text []*Text
 }
 
 // Unsharp is an unsharp filter config.
@@ -622,6 +625,93 @@ const (
 	ExifOptionKeepOrientation ExifOption = 2
 
 	exifOptionMax ExifOption = 3
+)
+
+// Text is a text to be used for the image.
+type Text struct {
+	// Font is the font to be used for the text.
+	Font string
+
+	// Size is the size of the text.
+	Size float64
+
+	// Foreground is the foreground color of the text.
+	Foreground color.Color
+
+	// Background is the background color of the text.
+	Background color.Color
+
+	// Width is the width of the text.
+	Width int
+
+	// Height is the height of the text.
+	Height int
+
+	// LineSpacing is the line spacing of the text.
+	LineSpacing float64
+
+	// Align is the alignment of the text.
+	Align TextAlign
+
+	// Direction is the direction of the text.
+	Direction TextDirection
+
+	// Wrap is the wrap mode of the text.
+	Wrap TextWrap
+
+	// Ellipsize is true if the text should be ellipsized.
+	Ellipsize bool
+
+	// Justify is true if the text should be justified.
+	Justify bool
+
+	// Strike is true if the text should be struck through.
+	Strike bool
+
+	// Text is the text string.
+	Text string
+}
+
+// TextAlign specifies the alignment of the text.
+type TextAlign int
+
+const (
+	// TextAlignLeft aligns the text to the left.
+	TextAlignLeft TextAlign = 0
+
+	// TextAlignCenter aligns the text to the center.
+	TextAlignCenter TextAlign = 1
+
+	// TextAlignRight aligns the text to the right.
+	TextAlignRight TextAlign = 2
+)
+
+// TextDirection specifies the direction of the text.
+type TextDirection int
+
+const (
+	// TextDirectionAuto is the default value of TextDirection.
+	TextDirectionAuto TextDirection = 0
+
+	// TextDirectionLTR is left to right.
+	TextDirectionLTR TextDirection = 1
+
+	// TextDirectionRTL is right to left.
+	TextDirectionRTL TextDirection = 2
+)
+
+// TextWrap specifies the wrap mode of the text.
+type TextWrap int
+
+const (
+	// TextWrapLine is the default value of TextWrap.
+	TextWrapLine TextWrap = 0
+
+	// TextWrapChar is character wrap.
+	TextWrapChar TextWrap = 1
+
+	// TextWrapLineChar is line and character wrap.
+	TextWrapLineChar TextWrap = 2
 )
 
 // String returns a string representing the Config.
