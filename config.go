@@ -668,6 +668,25 @@ type Text struct {
 	// Strike is true if the text should be struck through.
 	Strike bool
 
+	// Offset is an offset in pixel of overlay image.
+	Offset image.Point
+
+	// OffsetRatio is an offset in ratio of overlay image.
+	// The coordinates of the rectangle are divided by OffsetMax.X or OffsetMax.Y.
+	OffsetRatio image.Point
+
+	// OffsetMax is the denominators of OffsetRatio.
+	OffsetMax image.Point
+
+	// OverlayOrigin is the position of the overlay image origin.
+	OverlayOrigin Origin
+
+	// MaskType specifies the area to be treated as a mask.
+	MaskType MaskType
+
+	// PaddingMode specifies processing when the specified image is smaller than the input image.
+	PaddingMode PaddingMode
+
 	// Text is the text string.
 	Text string
 }
