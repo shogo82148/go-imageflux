@@ -876,8 +876,9 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 
 	if len(c.Texts) > 0 {
 		for _, text := range c.Texts {
-			buf = append(buf, "t="...)
+			buf = append(buf, "t=("...)
 			buf = text.append(buf, escapeComma)
+			buf = append(buf, ')')
 			buf = appendComma(buf, escapeComma)
 		}
 	}
@@ -1423,6 +1424,18 @@ func (s *parseState) setValue(key, value string) error {
 			return fmt.Errorf("imageflux: invalid invert %q", value)
 		}
 
+	// Texts
+	case "t":
+		if len(value) < 2 || value[0] != '(' || value[len(value)-1] != ')' {
+			return fmt.Errorf("imageflux: invalid texts %q", value)
+		}
+		value = value[1 : len(value)-1]
+		text, err := ParseText(value)
+		if err != nil {
+			return err
+		}
+		s.config.Texts = append(s.config.Texts, text)
+
 	// Expires
 	case "expires":
 		expires, err := time.Parse(time.RFC3339, value)
@@ -1513,4 +1526,31 @@ func (s *parseState) skipComma() (skipped bool) {
 
 func (s *parseState) rest() string {
 	return s.s[s.idx:]
+}
+
+func parseColor(s string) (color.NRGBA, error) {
+	if len(s) == 6 {
+		rgb, err := strconv.ParseUint(s, 16, 32)
+		if err != nil {
+			return color.NRGBA{}, fmt.Errorf("imageflux: invalid color %q", s)
+		}
+		return color.NRGBA{
+			R: uint8(rgb >> 16),
+			G: uint8(rgb >> 8),
+			B: uint8(rgb),
+			A: 0xff,
+		}, nil
+	} else if len(s) == 8 {
+		rgba, err := strconv.ParseUint(s, 16, 32)
+		if err != nil {
+			return color.NRGBA{}, fmt.Errorf("imageflux: invalid color %q", s)
+		}
+		return color.NRGBA{
+			R: uint8(rgba >> 24),
+			G: uint8(rgba >> 16),
+			B: uint8(rgba >> 8),
+			A: uint8(rgba),
+		}, nil
+	}
+	return color.NRGBA{}, fmt.Errorf("imageflux: invalid color %q", s)
 }

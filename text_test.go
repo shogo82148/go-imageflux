@@ -4,6 +4,8 @@ import (
 	"image"
 	"image/color"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestText(t *testing.T) {
@@ -181,6 +183,37 @@ func TestText(t *testing.T) {
 	for _, c := range cases {
 		if got := c.text.String(); got != c.expected {
 			t.Errorf("%#v: Text.String() = %q, want %q", c.text, got, c.expected)
+		}
+	}
+}
+
+func TestParseText(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected *Text
+	}{
+		{
+			input: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,text=Hello%2C%20world%21",
+			expected: &Text{
+				Font: &Font{
+					Name: "新ゴ R",
+				},
+				Height: 100,
+				Width:  400,
+				Size:   12,
+				Text:   "Hello, world!",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		got, err := ParseText(c.input)
+		if err != nil {
+			t.Errorf("ParseText(%q) returned error: %v", c.input, err)
+			continue
+		}
+		if diff := cmp.Diff(c.expected, got); diff != "" {
+			t.Errorf("ParseText(%q) = (+expected / -got) %s", c.input, diff)
 		}
 	}
 }
