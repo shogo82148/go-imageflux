@@ -259,13 +259,13 @@ func (b Blur) append(buf []byte) []byte {
 }
 
 func parseBlur(s string) (Blur, error) {
-	idx := strings.IndexByte(s, 'x')
-	if idx < 0 {
+	before, after, ok := strings.Cut(s, "x")
+	if !ok {
 		return Blur{}, errors.New("imageflux: invalid blur format")
 	}
 
 	// radius
-	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	r, err := strconv.ParseInt(before, 10, 0)
 	if err != nil {
 		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
 	}
@@ -274,7 +274,7 @@ func parseBlur(s string) (Blur, error) {
 	}
 
 	// sigma
-	sigma, err := strconv.ParseFloat(s[idx+1:], 64)
+	sigma, err := strconv.ParseFloat(after, 64)
 	if err != nil {
 		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
 	}
@@ -767,7 +767,7 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 	}
 	if !c.Expires.IsZero() {
 		buf = append(buf, "expires="...)
-		buf = c.Expires.In(time.UTC).AppendFormat(buf, time.RFC3339)
+		buf = c.Expires.In(time.UTC).Truncate(time.Second).AppendFormat(buf, time.RFC3339)
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableEnlarge {
@@ -1527,6 +1527,7 @@ func (s *parseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid expires %q", value)
 		}
+		expires = expires.Truncate(time.Second)
 		if !expires.After(nowFunc()) {
 			return ErrExpired
 		}
