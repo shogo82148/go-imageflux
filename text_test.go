@@ -24,7 +24,7 @@ func TestText(t *testing.T) {
 				Size:   12,
 				Text:   "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,text=Hello%2C%20world%21",
 		},
 
 		// Named instance with variable font
@@ -39,7 +39,7 @@ func TestText(t *testing.T) {
 				Size:   12,
 				Text:   "Hello, world!",
 			},
-			expected: "(font=(DriveFlux,instance=B%20Italic),size=12,w=400,h=100,text=Hello%2C%20world%21)",
+			expected: "font=(DriveFlux,instance=B%20Italic),size=12,w=400,h=100,text=Hello%2C%20world%21",
 		},
 
 		// Variable font with variable values
@@ -59,7 +59,7 @@ func TestText(t *testing.T) {
 				Size:   12,
 				Text:   "Hello, world!",
 			},
-			expected: "(font=(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700),size=12,w=400,h=100,text=Hello%2C%20world%21)",
+			expected: "font=(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700),size=12,w=400,h=100,text=Hello%2C%20world%21",
 		},
 
 		// Transparent foreground and background colors
@@ -85,7 +85,7 @@ func TestText(t *testing.T) {
 				},
 				Text: "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,f=112233,b=445566,w=400,h=100,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,f=112233,b=445566,w=400,h=100,text=Hello%2C%20world%21",
 		},
 		{
 			text: &Text{
@@ -109,7 +109,7 @@ func TestText(t *testing.T) {
 				},
 				Text: "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,f=1122337f,b=4455667f,w=400,h=100,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,f=1122337f,b=4455667f,w=400,h=100,text=Hello%2C%20world%21",
 		},
 
 		{
@@ -129,7 +129,7 @@ func TestText(t *testing.T) {
 				Strike:      true,
 				Text:        "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,linespacing=1.5,align=1,dir=1,wrap=2,ellipsize=1,justify=1,strike=1,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,linespacing=1.5,align=1,dir=1,wrap=2,ellipsize=1,justify=1,strike=1,text=Hello%2C%20world%21",
 		},
 
 		// offset
@@ -144,7 +144,7 @@ func TestText(t *testing.T) {
 				Offset: image.Point{X: 10, Y: 20},
 				Text:   "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,x=10,y=20,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,x=10,y=20,text=Hello%2C%20world%21",
 		},
 		{
 			text: &Text{
@@ -158,7 +158,7 @@ func TestText(t *testing.T) {
 				OffsetMax:   image.Point{X: 2, Y: 2},
 				Text:        "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,xr=0.5,yr=0.5,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,xr=0.5,yr=0.5,text=Hello%2C%20world%21",
 		},
 
 		// Mask
@@ -176,7 +176,7 @@ func TestText(t *testing.T) {
 				PaddingMode: PaddingModeLeave,
 				Text:        "Hello, world!",
 			},
-			expected: "(font=%E6%96%B0%E3%82%B4%20R,size=30,f=000000,b=ffffff,w=400,h=100,mask=black:1,text=Hello%2C%20world%21)",
+			expected: "font=%E6%96%B0%E3%82%B4%20R,size=30,f=000000,b=ffffff,w=400,h=100,mask=black:1,text=Hello%2C%20world%21",
 		},
 	}
 
