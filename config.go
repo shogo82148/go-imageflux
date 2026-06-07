@@ -658,7 +658,7 @@ func (c *Config) append(buf []byte, escapeComma bool) []byte {
 	}
 	if !c.Expires.IsZero() {
 		buf = append(buf, "expires="...)
-		buf = c.Expires.In(time.UTC).AppendFormat(buf, time.RFC3339)
+		buf = c.Expires.In(time.UTC).Truncate(time.Second).AppendFormat(buf, time.RFC3339)
 		buf = appendComma(buf, escapeComma)
 	}
 	if c.DisableEnlarge {
@@ -1418,6 +1418,7 @@ func (s *parseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid expires %q", value)
 		}
+		expires = expires.Truncate(time.Second)
 		if !expires.After(nowFunc()) {
 			return ErrExpired
 		}
