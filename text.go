@@ -72,6 +72,10 @@ type Text struct {
 	Text string
 }
 
+func (t *Text) String() string {
+	return string(t.append(nil, false))
+}
+
 func (t *Text) append(buf []byte, escapeComma bool) []byte {
 	var zp image.Point
 
