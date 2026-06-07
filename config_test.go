@@ -495,6 +495,26 @@ var configStringCases = []struct {
 		},
 		output: "invert=1",
 	},
+
+	// text overlays
+	{
+		config: &Config{
+			Texts: []*Text{
+				{
+					Font: &Font{
+						Name: "Ryumin R-KL",
+					},
+					Size:       30,
+					Width:      400,
+					Height:     80,
+					Align:      TextAlignCenter,
+					Foreground: color.White,
+					Text:       "テキストが\n合成できます",
+				},
+			},
+		},
+		output: "t=(font=Ryumin%20R-KL,size=30,f=ffffff,w=400,h=80,align=1,text=%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E3%81%8C%0A%E5%90%88%E6%88%90%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99)",
+	},
 }
 
 func TestConfig(t *testing.T) {
