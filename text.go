@@ -191,7 +191,7 @@ func (t *Text) append(buf []byte, escapeComma bool) []byte {
 		buf = strconv.AppendInt(buf, int64(t.Offset.Y), 10)
 		buf = appendComma(buf, escapeComma)
 	}
-	if t.OffsetRatio != zp && t.OffsetMax != zp {
+	if t.OffsetRatio != zp && t.OffsetMax.X != 0 && t.OffsetMax.Y != 0 {
 		x := float64(t.OffsetRatio.X) / float64(t.OffsetMax.X)
 		y := float64(t.OffsetRatio.Y) / float64(t.OffsetMax.Y)
 		buf = append(buf, "xr="...)
