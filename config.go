@@ -256,13 +256,13 @@ func (b Blur) append(buf []byte) []byte {
 }
 
 func parseBlur(s string) (Blur, error) {
-	idx := strings.IndexByte(s, 'x')
-	if idx < 0 {
+	before, after, ok := strings.Cut(s, "x")
+	if !ok {
 		return Blur{}, errors.New("imageflux: invalid blur format")
 	}
 
 	// radius
-	r, err := strconv.ParseInt(s[:idx], 10, 0)
+	r, err := strconv.ParseInt(before, 10, 0)
 	if err != nil {
 		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
 	}
@@ -271,7 +271,7 @@ func parseBlur(s string) (Blur, error) {
 	}
 
 	// sigma
-	sigma, err := strconv.ParseFloat(s[idx+1:], 64)
+	sigma, err := strconv.ParseFloat(after, 64)
 	if err != nil {
 		return Blur{}, fmt.Errorf("imageflux: invalid blur format: %w", err)
 	}
