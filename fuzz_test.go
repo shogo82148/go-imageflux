@@ -1,13 +1,13 @@
 //go:build go1.18
-// +build go1.18
 
 package imageflux
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func FuzzParseConfig(f *testing.F) {
@@ -41,8 +41,8 @@ func FuzzParseConfig(f *testing.F) {
 			c1.Format = FormatAuto
 		}
 
-		if !reflect.DeepEqual(c0, c1) {
-			t.Errorf("%q: c0 != c1: %v != %v", s, c0, c1)
+		if diff := cmp.Diff(c0, c1); diff != "" {
+			t.Errorf("%q: (-c0 +c1) %v", s, diff)
 		}
 	})
 }
