@@ -555,31 +555,11 @@ func (s *overlayParseState) setValue(key, value string) error {
 
 	// Background
 	case "b":
-		if len(value) == 6 {
-			rgb, err := strconv.ParseUint(value, 16, 32)
-			if err != nil {
-				return fmt.Errorf("imageflux: invalid background %q", value)
-			}
-			s.overlay.Background = color.NRGBA{
-				R: uint8(rgb >> 16),
-				G: uint8(rgb >> 8),
-				B: uint8(rgb),
-				A: 0xff,
-			}
-		} else if len(value) == 8 {
-			rgba, err := strconv.ParseUint(value, 16, 32)
-			if err != nil {
-				return fmt.Errorf("imageflux: invalid background %q", value)
-			}
-			s.overlay.Background = color.NRGBA{
-				R: uint8(rgba >> 24),
-				G: uint8(rgba >> 16),
-				B: uint8(rgba >> 8),
-				A: uint8(rgba),
-			}
-		} else {
-			return fmt.Errorf("imageflux: invalid background %q", value)
+		c, err := parseColor(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid background %q: %w", value, err)
 		}
+		s.overlay.Background = c
 
 	// InputRotate
 	case "ir":
