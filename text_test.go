@@ -217,3 +217,15 @@ func TestParseText(t *testing.T) {
 		}
 	}
 }
+
+func TestParseText_Error(t *testing.T) {
+	cases := []string{
+		"=",
+	}
+
+	for _, c := range cases {
+		if _, err := ParseText(c); err == nil {
+			t.Errorf("ParseText(%q) did not return error", c)
+		}
+	}
+}

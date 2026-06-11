@@ -385,6 +385,7 @@ func (s *textParseState) getValue() string {
 }
 
 func (s *textParseState) parseText() (*Text, error) {
+	foundText := false
 	for s.idx < len(s.s) {
 		key, foundEqual := s.getKey()
 		if !foundEqual {
@@ -400,6 +401,9 @@ func (s *textParseState) parseText() (*Text, error) {
 		if err := s.setValue(key, value); err != nil {
 			return nil, err
 		}
+	}
+	if !foundText {
+		return nil, errors.New("imageflux: missing text parameter")
 	}
 	text := s.s[s.idx:]
 	s.text.Text = text
