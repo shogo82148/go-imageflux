@@ -395,6 +395,7 @@ func (s *textParseState) parseText() (*Text, error) {
 			return nil, errors.New("imageflux: unexpected ','")
 		}
 		if key == "text" {
+			foundText = true
 			break
 		}
 		value := s.getValue()
