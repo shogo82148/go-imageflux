@@ -495,29 +495,32 @@ func (s *textParseState) setValue(key, value string) error {
 		s.text.Wrap = TextWrap(wrap)
 
 	case "ellipsize":
-		if value == "1" {
+		switch value {
+		case "1":
 			s.text.Ellipsize = true
-		} else if value == "0" {
+		case "0":
 			s.text.Ellipsize = false
-		} else {
+		default:
 			return fmt.Errorf("imageflux: invalid ellipsize value %q: must be 0 or 1", value)
 		}
 
 	case "justify":
-		if value == "1" {
+		switch value {
+		case "1":
 			s.text.Justify = true
-		} else if value == "0" {
+		case "0":
 			s.text.Justify = false
-		} else {
+		default:
 			return fmt.Errorf("imageflux: invalid justify value %q: must be 0 or 1", value)
 		}
 
 	case "strike":
-		if value == "1" {
+		switch value {
+		case "1":
 			s.text.Strike = true
-		} else if value == "0" {
+		case "0":
 			s.text.Strike = false
-		} else {
+		default:
 			return fmt.Errorf("imageflux: invalid strike value %q: must be 0 or 1", value)
 		}
 	}
