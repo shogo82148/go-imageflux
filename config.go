@@ -551,6 +551,7 @@ func (t Through) String() string {
 }
 
 func (t Through) append(buf []byte) []byte {
+	l := len(buf)
 	if (t & ThroughJPEG) != 0 {
 		buf = append(buf, "jpg:"...)
 	}
@@ -572,7 +573,7 @@ func (t Through) append(buf []byte) []byte {
 	if (t & ThroughAuto) != 0 {
 		buf = append(buf, "auto:"...)
 	}
-	if len(buf) == 0 {
+	if len(buf) == l {
 		return buf
 	}
 	return buf[:len(buf)-1]
