@@ -391,26 +391,26 @@ func TestText_String(t *testing.T) {
 	}
 }
 
-func TestParseText(t *testing.T) {
-	cases := []struct {
-		input    string
-		expected *Text
-	}{
-		{
-			input: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,text=Hello%2C%20world%21",
-			expected: &Text{
-				Font: &Font{
-					Name: "新ゴ R",
-				},
-				Height: 100,
-				Width:  400,
-				Size:   12,
-				Text:   "Hello, world!",
+var parseTextCases = []struct {
+	input    string
+	expected *Text
+}{
+	{
+		input: "font=%E6%96%B0%E3%82%B4%20R,size=12,w=400,h=100,text=Hello%2C%20world%21",
+		expected: &Text{
+			Font: &Font{
+				Name: "新ゴ R",
 			},
+			Height: 100,
+			Width:  400,
+			Size:   12,
+			Text:   "Hello, world!",
 		},
-	}
+	},
+}
 
-	for _, c := range cases {
+func TestParseText(t *testing.T) {
+	for _, c := range parseTextCases {
 		got, err := ParseText(c.input)
 		if err != nil {
 			t.Errorf("ParseText(%q) returned error: %v", c.input, err)
@@ -422,14 +422,39 @@ func TestParseText(t *testing.T) {
 	}
 }
 
-func TestParseText_Error(t *testing.T) {
-	cases := []string{
-		"=",
-	}
+var parseTextErrorCases = []string{
+	"=",
+}
 
-	for _, c := range cases {
+func TestParseText_Error(t *testing.T) {
+	for _, c := range parseTextErrorCases {
 		if _, err := ParseText(c); err == nil {
 			t.Errorf("ParseText(%q) did not return error", c)
 		}
 	}
+}
+
+func FuzzParseText(f *testing.F) {
+	for _, c := range parseTextCases {
+		f.Add(c.input)
+	}
+	for _, c := range parseTextErrorCases {
+		f.Add(c)
+	}
+
+	f.Fuzz(func(t *testing.T, s string) {
+		text, err := ParseText(s)
+		if err != nil {
+			return
+		}
+		s1 := text.String()
+		text2, err := ParseText(s1)
+		if err != nil {
+			t.Errorf("ParseText(%q) returned error: %v", s1, err)
+			return
+		}
+		if diff := cmp.Diff(text, text2); diff != "" {
+			t.Errorf("ParseText(%q) = (+text / -text2) %s", s, diff)
+		}
+	})
 }
