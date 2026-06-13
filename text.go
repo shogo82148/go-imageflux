@@ -241,6 +241,14 @@ type Font struct {
 	Variables map[string]float64
 }
 
+func (f *Font) String() string {
+	if f == nil {
+		return ""
+	}
+	buf := f.append(nil)
+	return string(buf)
+}
+
 func (f *Font) append(buf []byte) []byte {
 	if f == nil || f.Name == "" {
 		return buf
