@@ -353,14 +353,15 @@ func (s *parseFontState) parseFont() (*Font, error) {
 			}
 			s.font.Instance = instance
 		case "var":
+			value, err := url.PathUnescape(value)
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: %w", value, err)
+			}
 			before, after, ok := strings.Cut(value, ":")
 			if !ok {
 				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: missing ':'", value)
 			}
-			tag, err := url.PathUnescape(before)
-			if err != nil {
-				return nil, fmt.Errorf("imageflux: invalid variable font tag %q: %w", before, err)
-			}
+			tag := before
 			v, err := strconv.ParseFloat(after, 64)
 			if err != nil {
 				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", after, err)
