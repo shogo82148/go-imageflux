@@ -113,6 +113,7 @@ func TestParseFont_Error(t *testing.T) {
 		"(DriveFlux,instance)",            // missing instance value
 		"(DriveFlux,var=CNTR)",            // missing ':'
 		"(DriveFlux,var=CNTR:NotANumber)", // invalid number
+		"(DriveFlux,unknown=Value)",       // unknown key
 	}
 
 	for _, c := range cases {

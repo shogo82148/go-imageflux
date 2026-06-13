@@ -365,6 +365,8 @@ func (s *parseFontState) parseFont() (*Font, error) {
 				s.font.Variables = make(map[string]float64)
 			}
 			s.font.Variables[tag] = v
+		default:
+			return nil, fmt.Errorf("imageflux: unknown key %q in font specification", key)
 		}
 	}
 
