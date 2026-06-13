@@ -110,6 +110,7 @@ func TestParseFont(t *testing.T) {
 func TestParseFont_Error(t *testing.T) {
 	cases := []string{
 		"(DriveFlux",                      // missing closing parenthesis
+		"(DriveFlux,instance=B%20Italic",  // missing closing parenthesis
 		"(DriveFlux,instance)",            // missing instance value
 		"(DriveFlux,var=CNTR)",            // missing ':'
 		"(DriveFlux,var=CNTR:NotANumber)", // invalid number

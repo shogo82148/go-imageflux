@@ -369,6 +369,10 @@ func (s *parseFontState) parseFont() (*Font, error) {
 			return nil, fmt.Errorf("imageflux: unknown key %q in font specification", key)
 		}
 	}
+	if s.idx >= len(s.s) || s.s[s.idx] != ')' {
+		return nil, errors.New("imageflux: unexpected end of font specification")
+	}
+	s.idx++
 
 	return s.font, nil
 }
