@@ -413,6 +413,12 @@ var configStringCases = []struct {
 	},
 	{
 		config: &Config{
+			Format: FormatMP4,
+		},
+		output: "f=mp4",
+	},
+	{
+		config: &Config{
 			Quality: 75,
 		},
 		output: "q=75",
