@@ -8,6 +8,62 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestParseFont(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected *Font
+	}{
+		{
+			input: "",
+			expected: &Font{
+				Name: "",
+			},
+		},
+		{
+			input: "%E6%96%B0%E3%82%B4%20R",
+			expected: &Font{
+				Name: "新ゴ R",
+			},
+		},
+		{
+			input: "(%E6%96%B0%E3%82%B4%20R)",
+			expected: &Font{
+				Name: "新ゴ R",
+			},
+		},
+		{
+			input: "(DriveFlux,instance=B%20Italic)",
+			expected: &Font{
+				Name:     "DriveFlux",
+				Instance: "B Italic",
+			},
+		},
+		{
+			input: "(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700)",
+			expected: &Font{
+				Name: "DriveFlux",
+				Variables: map[string]float64{
+					"wght": 700,
+					"SMTH": 0,
+					"CNTR": 0,
+					"slnt": -16,
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		got, err := ParseFont(c.input)
+		if err != nil {
+			t.Errorf("ParseFont(%q) returned error: %v", c.input, err)
+			continue
+		}
+		if diff := cmp.Diff(got, c.expected); diff != "" {
+			t.Errorf("ParseFont(%q) = (+got / -expected) %s", c.input, diff)
+		}
+	}
+}
+
 func TestText(t *testing.T) {
 	cases := []struct {
 		text     *Text
@@ -212,8 +268,8 @@ func TestParseText(t *testing.T) {
 			t.Errorf("ParseText(%q) returned error: %v", c.input, err)
 			continue
 		}
-		if diff := cmp.Diff(c.expected, got); diff != "" {
-			t.Errorf("ParseText(%q) = (+expected / -got) %s", c.input, diff)
+		if diff := cmp.Diff(got, c.expected); diff != "" {
+			t.Errorf("ParseText(%q) = (+got / -expected) %s", c.input, diff)
 		}
 	}
 }

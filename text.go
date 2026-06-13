@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Text is a text to be used for the image.
@@ -282,6 +283,116 @@ func (f *Font) append(buf []byte) []byte {
 	return buf
 }
 
+type parseFontState struct {
+	s    string
+	idx  int
+	font *Font
+}
+
+func ParseFont(s string) (*Font, error) {
+	s, err := url.PathUnescape(s)
+	if err != nil {
+		return nil, err
+	}
+	return parseFont(s)
+}
+
+func parseFont(s string) (*Font, error) {
+	state := &parseFontState{
+		s:    s,
+		idx:  0,
+		font: &Font{},
+	}
+	return state.parseFont()
+}
+
+func (s *parseFontState) parseFont() (*Font, error) {
+	if s.idx >= len(s.s) || s.s[s.idx] != '(' {
+		s.font.Name = s.s
+		return s.font, nil
+	}
+	s.idx++
+
+	// parse font name
+	nameStart := s.idx
+	for nameEnd := s.idx; nameEnd < len(s.s); nameEnd++ {
+		if s.s[nameEnd] == ',' || s.s[nameEnd] == ')' {
+			s.font.Name = s.s[nameStart:nameEnd]
+			s.idx = nameEnd
+			break
+		}
+	}
+	if s.idx >= len(s.s) {
+		return nil, errors.New("imageflux: unexpected end of font specification")
+	}
+	if s.s[s.idx] == ')' {
+		s.idx++
+		return s.font, nil
+	}
+	if s.s[s.idx] != ',' {
+		return nil, fmt.Errorf("imageflux: unexpected character %q in font specification", s.s[s.idx])
+	}
+	s.idx++
+
+	// parse parameters
+	for s.idx < len(s.s) && s.s[s.idx] != ')' {
+		key, foundEqual := s.getKey()
+		if !foundEqual {
+			return nil, fmt.Errorf("imageflux: missing '=' after key %q in font specification", key)
+		}
+		value := s.getValue()
+		switch key {
+		case "instance":
+			s.font.Instance = value
+		case "var":
+			before, after, ok := strings.Cut(value, ":")
+			if !ok {
+				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: missing ':'", value)
+			}
+			tag := before
+			v, err := strconv.ParseFloat(after, 64)
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", after, err)
+			}
+			if s.font.Variables == nil {
+				s.font.Variables = make(map[string]float64)
+			}
+			s.font.Variables[tag] = v
+		}
+	}
+
+	return s.font, nil
+}
+
+func (s *parseFontState) getKey() (key string, foundEqual bool) {
+	i := s.idx
+	for ; i < len(s.s); i++ {
+		switch s.s[i] {
+		case '=':
+			key = s.s[s.idx:i]
+			s.idx = i + 1
+			return key, true
+		case ',', ')':
+			key = s.s[s.idx:i]
+			s.idx = i + 1
+			return key, false
+		}
+	}
+	return s.s[s.idx:i], false
+}
+
+func (s *parseFontState) getValue() string {
+	i := s.idx
+	for ; i < len(s.s); i++ {
+		if s.s[i] == ',' || s.s[i] == ')' {
+			break
+		}
+	}
+	value := s.s[s.idx:i]
+	s.idx = i + 1
+	return value
+}
+
 // TextAlign specifies the alignment of the text.
 type TextAlign int
 
@@ -415,8 +526,11 @@ func (s *textParseState) parseText() (*Text, error) {
 func (s *textParseState) setValue(key, value string) error {
 	switch key {
 	case "font":
-		// TODO: parse font
-		s.text.Font = &Font{Name: value}
+		font, err := parseFont(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid font specification %q: %w", value, err)
+		}
+		s.text.Font = font
 
 	case "size":
 		size, err := strconv.ParseFloat(value, 64)
