@@ -103,7 +103,8 @@ func (img *Image) String() string {
 	buf = append(buf, "/c/"...)
 	buf = img.Config.append(buf)
 	if !img.Expires.IsZero() {
-		buf = append(buf, ",expires="...)
+		buf = appendComma(buf)
+		buf = append(buf, "expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)
 	}
 	if len(img.Path) == 0 || img.Path[0] != '/' {

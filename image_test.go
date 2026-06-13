@@ -294,7 +294,7 @@ func TestImage_String(t *testing.T) {
 				Path:    "/images/1.jpg",
 				Expires: time.Date(2023, 6, 24, 18, 23, 0, 123456789, jst),
 			},
-			"https://demo.imageflux.jp/c/f=auto,expires=2023-06-24T09:23:00Z/images/1.jpg",
+			"https://demo.imageflux.jp/c/f=auto%2Cexpires=2023-06-24T09:23:00Z/images/1.jpg",
 		},
 	}
 
