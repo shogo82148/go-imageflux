@@ -42,6 +42,15 @@ func TestFont_String(t *testing.T) {
 			},
 			expected: "(DriveFlux%2Cvar=CNTR:0%2Cvar=SMTH:0%2Cvar=slnt:-16%2Cvar=wght:700)",
 		},
+		{
+			font: &Font{
+				Name: "0",
+				Variables: map[string]float64{
+					" ": 0,
+				},
+			},
+			expected: "(0%2Cvar=%20:0)",
+		},
 	}
 
 	for _, c := range cases {
@@ -111,6 +120,31 @@ var parseFontCases = []struct {
 			},
 		},
 	},
+	{
+		input: "(,instance=0)",
+		expected: &Font{
+			Name:     "",
+			Instance: "0",
+		},
+	},
+	{
+		input: "(0%2Cvar= :0)",
+		expected: &Font{
+			Name: "0",
+			Variables: map[string]float64{
+				" ": 0,
+			},
+		},
+	},
+	{
+		input: "(0%2Cvar=%20:0)",
+		expected: &Font{
+			Name: "0",
+			Variables: map[string]float64{
+				" ": 0,
+			},
+		},
+	},
 }
 
 func TestParseFont(t *testing.T) {
@@ -154,6 +188,9 @@ func FuzzParseFont(f *testing.F) {
 	f.Fuzz(func(t *testing.T, s string) {
 		font, err := ParseFont(s)
 		if err != nil {
+			return
+		}
+		if font.Name == "" {
 			return
 		}
 		s1 := font.String()
