@@ -161,6 +161,9 @@ func TestParseFont(t *testing.T) {
 }
 
 var parseFontErrorCases = []string{
+	"%XX",                             // invalid percent encoding
+	"(DriveFlux,instance=%XX)",        // invalid percent encoding in instance
+	"(DriveFlux,var=%XX:0)",           // invalid percent encoding in variable tag
 	"(DriveFlux",                      // missing closing parenthesis
 	"(DriveFlux,instance=B%20Italic",  // missing closing parenthesis
 	"(DriveFlux,instance)",            // missing instance value
