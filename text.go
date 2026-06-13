@@ -345,14 +345,13 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		case "instance":
 			s.font.Instance = value
 		case "var":
-			before, after, ok := strings.Cut(value, ":")
+			tag, val, ok := strings.Cut(value, ":")
 			if !ok {
 				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: missing ':'", value)
 			}
-			tag := before
-			v, err := strconv.ParseFloat(after, 64)
+			v, err := strconv.ParseFloat(val, 64)
 			if err != nil {
-				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", after, err)
+				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", val, err)
 			}
 			if s.font.Variables == nil {
 				s.font.Variables = make(map[string]float64)

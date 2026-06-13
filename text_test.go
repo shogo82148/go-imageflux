@@ -64,6 +64,21 @@ func TestParseFont(t *testing.T) {
 	}
 }
 
+func TestParseFont_Error(t *testing.T) {
+	cases := []string{
+		"(DriveFlux",                      // missing closing parenthesis
+		"(DriveFlux,instance)",            // missing instance value
+		"(DriveFlux,var=CNTR)",            // missing ':'
+		"(DriveFlux,var=CNTR:NotANumber)", // invalid number
+	}
+
+	for _, c := range cases {
+		if _, err := ParseFont(c); err == nil {
+			t.Errorf("ParseFont(%q) did not return error", c)
+		}
+	}
+}
+
 func TestText(t *testing.T) {
 	cases := []struct {
 		text     *Text
