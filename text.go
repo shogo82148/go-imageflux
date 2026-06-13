@@ -83,21 +83,17 @@ func (t *Text) String() string {
 func (t *Text) append(buf []byte) []byte {
 	var zp image.Point
 
-	if t == nil || t.Text == "" {
+	if t == nil {
 		return buf
 	}
 
-	if t.Font != nil && t.Font.Name != "" {
-		buf = append(buf, "font="...)
-		buf = t.Font.append(buf)
-		buf = appendComma(buf)
-	}
+	buf = append(buf, "font="...)
+	buf = t.Font.append(buf)
+	buf = appendComma(buf)
 
-	if t.Size != 0 {
-		buf = append(buf, "size="...)
-		buf = strconv.AppendFloat(buf, t.Size, 'f', -1, 64)
-		buf = appendComma(buf)
-	}
+	buf = append(buf, "size="...)
+	buf = strconv.AppendFloat(buf, t.Size, 'f', -1, 64)
+	buf = appendComma(buf)
 
 	if t.Foreground != nil {
 		f := color.NRGBAModel.Convert(t.Foreground).(color.NRGBA)
@@ -135,16 +131,15 @@ func (t *Text) append(buf []byte) []byte {
 		buf = appendComma(buf)
 	}
 
-	if t.Width != 0 {
-		buf = append(buf, "w="...)
-		buf = strconv.AppendInt(buf, int64(t.Width), 10)
-		buf = appendComma(buf)
-	}
-	if t.Height != 0 {
-		buf = append(buf, "h="...)
-		buf = strconv.AppendInt(buf, int64(t.Height), 10)
-		buf = appendComma(buf)
-	}
+	// width
+	buf = append(buf, "w="...)
+	buf = strconv.AppendInt(buf, int64(t.Width), 10)
+	buf = appendComma(buf)
+
+	// height
+	buf = append(buf, "h="...)
+	buf = strconv.AppendInt(buf, int64(t.Height), 10)
+	buf = appendComma(buf)
 
 	if t.LineSpacing != 0 {
 		buf = append(buf, "linespacing="...)
@@ -586,6 +581,9 @@ func (s *textParseState) parseText() (*Text, error) {
 
 	// validate the parameters.
 	var errs []error
+	if s.text.Font == nil {
+		errs = append(errs, errors.New("imageflux: missing font parameter"))
+	}
 	if s.text.Width <= 0 {
 		errs = append(errs, fmt.Errorf("imageflux: width must be positive, but got %d", s.text.Width))
 	}

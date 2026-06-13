@@ -1,0 +1,2 @@
+go test fuzz v1
+string("font=,size=1,w=1,h=1,text=")

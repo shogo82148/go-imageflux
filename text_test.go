@@ -382,6 +382,17 @@ func TestText_String(t *testing.T) {
 			},
 			expected: "font=%E6%96%B0%E3%82%B4%20R%2Csize=30%2Cf=000000%2Cb=ffffff%2Cw=400%2Ch=100%2Cmask=black:1%2Ctext=Hello%2C%20world%21",
 		},
+
+		// Basic case
+		{
+			text: &Text{
+				Height: 100,
+				Width:  400,
+				Size:   12,
+				Text:   "Hello, world!",
+			},
+			expected: "font=%2Csize=12%2Cw=400%2Ch=100%2Ctext=Hello%2C%20world%21",
+		},
 	}
 
 	for _, c := range cases {
@@ -416,6 +427,18 @@ var parseTextCases = []struct {
 			Font: &Font{
 				Name: "新ゴ R",
 			},
+			Height: 100,
+			Width:  400,
+			Size:   12,
+			Text:   "Hello, world!",
+		},
+	},
+
+	// empty font name
+	{
+		input: "font=,size=12,w=400,h=100,text=Hello%2C%20world%21",
+		expected: &Text{
+			Font:   &Font{},
 			Height: 100,
 			Width:  400,
 			Size:   12,
@@ -651,7 +674,7 @@ func FuzzParseText(f *testing.F) {
 			return
 		}
 		if diff := cmp.Diff(text, text2); diff != "" {
-			t.Errorf("ParseText(%q) = (+text / -text2) %s", s, diff)
+			t.Errorf("ParseText(%q) = (-text / +text2) %s", s, diff)
 		}
 	})
 }
