@@ -108,7 +108,7 @@ var configStringCases = []struct {
 			Width:  200,
 			Height: 200,
 		},
-		output: "w=200,h=200",
+		output: "w=200%2Ch=200",
 	},
 	{
 		config: &Config{
@@ -148,7 +148,7 @@ var configStringCases = []struct {
 			InputClip:   image.Rect(100, 150, 200, 250),
 			InputOrigin: OriginMiddleCenter,
 		},
-		output: "ic=100:150:200:250,ig=5",
+		output: "ic=100:150:200:250%2Cig=5",
 	},
 	{
 		config: &Config{
@@ -204,7 +204,7 @@ var configStringCases = []struct {
 			OutputClip:   image.Rect(100, 150, 200, 250),
 			OutputOrigin: OriginMiddleCenter,
 		},
-		output: "oc=100:150:200:250,og=5",
+		output: "oc=100:150:200:250%2Cog=5",
 	},
 
 	{
@@ -348,7 +348,7 @@ var configStringCases = []struct {
 				Offset: image.Pt(100, 200),
 			}},
 		},
-		output: "l=(x=100,y=200%2Fimages%2F1.png)",
+		output: "l=(x=100%2Cy=200%2Fimages%2F1.png)",
 	},
 	{
 		config: &Config{
@@ -358,7 +358,7 @@ var configStringCases = []struct {
 				OffsetMax:   image.Pt(100, 100),
 			}},
 		},
-		output: "l=(xr=0.25,yr=0.75%2Fimages%2F1.png)",
+		output: "l=(xr=0.25%2Cyr=0.75%2Fimages%2F1.png)",
 	},
 	{
 		config: &Config{
@@ -382,7 +382,7 @@ var configStringCases = []struct {
 				},
 			},
 		},
-		output: "l=(x=100,y=200%2Fimages%2F1.png),l=(x=200,y=100%2Fimages%2F2.png)",
+		output: "l=(x=100%2Cy=200%2Fimages%2F1.png)%2Cl=(x=200%2Cy=100%2Fimages%2F2.png)",
 	},
 	{
 		config: &Config{
@@ -514,7 +514,7 @@ var configStringCases = []struct {
 				},
 			},
 		},
-		output: "t=(font=Ryumin%20R-KL,size=30,f=ffffff,w=400,h=80,align=1,text=%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E3%81%8C%0A%E5%90%88%E6%88%90%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99)",
+		output: "t=(font=Ryumin%20R-KL%2Csize=30%2Cf=ffffff%2Cw=400%2Ch=80%2Calign=1%2Ctext=%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88%E3%81%8C%0A%E5%90%88%E6%88%90%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99)",
 	},
 }
 

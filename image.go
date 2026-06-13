@@ -34,39 +34,37 @@ type Image struct {
 	Expires time.Time
 }
 
-// SignedURL returns the URL of the image with the signature.
+// SignedURL returns the signed URL of the image.
+// As of v1.3.0, the URL no longer contains commas.
+// This is useful for the srcset attribute of an HTML img tag.
 func (img *Image) SignedURL() string {
-	path, s := img.pathAndSign(false)
-	if s == "" {
-		return "https://" + img.Proxy.Host + path
-	}
-	return "https://" + img.Proxy.Host + "/c/sig=" + s + "," + strings.TrimPrefix(path, "/c/")
-}
-
-// SignedURLWithoutComma is same as SignedURL but
-// the url doesn't contain comma.
-// It is useful for srcset of HTML img tag.
-func (img *Image) SignedURLWithoutComma() string {
-	path, s := img.pathAndSign(true)
+	path, s := img.pathAndSign()
 	if s == "" {
 		return "https://" + img.Proxy.Host + path
 	}
 	return "https://" + img.Proxy.Host + "/c/sig=" + s + "%2C" + strings.TrimPrefix(path, "/c/")
 }
 
+// SignedURLWithoutComma is same as SignedURL.
+//
+// It is provided for backward compatibility.
+func (img *Image) SignedURLWithoutComma() string {
+	return img.SignedURL()
+}
+
 // Sign returns the signature.
 func (img *Image) Sign() string {
-	_, s := img.pathAndSign(false)
+	_, s := img.pathAndSign()
 	return s
 }
 
-func (img *Image) pathAndSign(escapeComma bool) (string, string) {
+func (img *Image) pathAndSign() (string, string) {
 	pbuf := bufPool.Get().(*[]byte)
 	buf := (*pbuf)[:0]
 	buf = append(buf, "/c/"...)
-	buf = img.Config.append(buf, escapeComma)
+	buf = img.Config.append(buf)
 	if !img.Expires.IsZero() {
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 		buf = append(buf, "expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)
 	}
@@ -103,7 +101,7 @@ func (img *Image) String() string {
 	buf = append(buf, "https://"...)
 	buf = append(buf, img.Proxy.Host...)
 	buf = append(buf, "/c/"...)
-	buf = img.Config.append(buf, false)
+	buf = img.Config.append(buf)
 	if !img.Expires.IsZero() {
 		buf = append(buf, ",expires="...)
 		buf = img.Expires.UTC().AppendFormat(buf, time.RFC3339)

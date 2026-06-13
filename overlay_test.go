@@ -18,7 +18,7 @@ func TestOverlay(t *testing.T) {
 				Height: 200,
 				Path:   "images/1.png",
 			},
-			output: "w=100,h=200%2Fimages%2F1.png",
+			output: "w=100%2Ch=200%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
@@ -26,7 +26,7 @@ func TestOverlay(t *testing.T) {
 				Height: 200,
 				Path:   "/images/1.png",
 			},
-			output: "w=100,h=200%2Fimages%2F1.png",
+			output: "w=100%2Ch=200%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
@@ -63,7 +63,7 @@ func TestOverlay(t *testing.T) {
 				InputOrigin: OriginMiddleCenter,
 				Path:        "images/1.png",
 			},
-			output: "ic=100:200:300:400,ig=5%2Fimages%2F1.png",
+			output: "ic=100:200:300:400%2Cig=5%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
@@ -126,7 +126,7 @@ func TestOverlay(t *testing.T) {
 				OutputOrigin: OriginMiddleCenter,
 				Path:         "images/1.png",
 			},
-			output: "oc=100:150:200:250,og=5%2Fimages%2F1.png",
+			output: "oc=100:150:200:250%2Cog=5%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
@@ -203,7 +203,7 @@ func TestOverlay(t *testing.T) {
 				Offset: image.Pt(100, 200),
 				Path:   "images/1.png",
 			},
-			output: "x=100,y=200%2Fimages%2F1.png",
+			output: "x=100%2Cy=200%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
@@ -211,7 +211,7 @@ func TestOverlay(t *testing.T) {
 				OffsetMax:   image.Pt(100, 100),
 				Path:        "images/1.png",
 			},
-			output: "xr=0.25,yr=0.75%2Fimages%2F1.png",
+			output: "xr=0.25%2Cyr=0.75%2Fimages%2F1.png",
 		},
 		{
 			overlay: &Overlay{
