@@ -300,14 +300,6 @@ type parseFontState struct {
 }
 
 func ParseFont(s string) (*Font, error) {
-	s, err := url.PathUnescape(s)
-	if err != nil {
-		return nil, err
-	}
-	return parseFont(s)
-}
-
-func parseFont(s string) (*Font, error) {
 	state := &parseFontState{
 		s:    s,
 		idx:  0,
@@ -318,7 +310,11 @@ func parseFont(s string) (*Font, error) {
 
 func (s *parseFontState) parseFont() (*Font, error) {
 	if s.idx >= len(s.s) || s.s[s.idx] != '(' {
-		s.font.Name = s.s
+		name, err := url.PathUnescape(s.s)
+		if err != nil {
+			return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s, err)
+		}
+		s.font.Name = name
 		return s.font, nil
 	}
 	s.idx++
@@ -327,7 +323,11 @@ func (s *parseFontState) parseFont() (*Font, error) {
 	nameStart := s.idx
 	for nameEnd := s.idx; nameEnd < len(s.s); nameEnd++ {
 		if s.s[nameEnd] == ',' || s.s[nameEnd] == ')' {
-			s.font.Name = s.s[nameStart:nameEnd]
+			name, err := url.PathUnescape(s.s[nameStart:nameEnd])
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s[nameStart:nameEnd], err)
+			}
+			s.font.Name = name
 			s.idx = nameEnd
 			break
 		}
@@ -354,7 +354,11 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		value := s.getValue()
 		switch key {
 		case "instance":
-			s.font.Instance = value
+			instance, err := url.PathUnescape(value)
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid instance value %q: %w", value, err)
+			}
+			s.font.Instance = instance
 		case "var":
 			tag, val, ok := strings.Cut(value, ":")
 			if !ok {
@@ -542,7 +546,7 @@ func (s *textParseState) parseText() (*Text, error) {
 func (s *textParseState) setValue(key, value string) error {
 	switch key {
 	case "font":
-		font, err := parseFont(value)
+		font, err := ParseFont(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid font specification %q: %w", value, err)
 		}
