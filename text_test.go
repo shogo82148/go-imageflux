@@ -8,7 +8,147 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestText(t *testing.T) {
+func TestFont_String(t *testing.T) {
+	cases := []struct {
+		font     *Font
+		expected string
+	}{
+		{
+			font:     nil,
+			expected: "",
+		},
+		{
+			font: &Font{
+				Name: "新ゴ R",
+			},
+			expected: "%E6%96%B0%E3%82%B4%20R",
+		},
+		{
+			font: &Font{
+				Name:     "DriveFlux",
+				Instance: "B Italic",
+			},
+			expected: "(DriveFlux,instance=B%20Italic)",
+		},
+		{
+			font: &Font{
+				Name: "DriveFlux",
+				Variables: map[string]float64{
+					"wght": 700,
+					"SMTH": 0,
+					"CNTR": 0,
+					"slnt": -16,
+				},
+			},
+			expected: "(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.font.String(); got != c.expected {
+			t.Errorf("%#v: Font.String() = %q, want %q", c.font, got, c.expected)
+		}
+	}
+}
+
+func TestParseFont(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected *Font
+	}{
+		{
+			input: "",
+			expected: &Font{
+				Name: "",
+			},
+		},
+		{
+			input: "%E6%96%B0%E3%82%B4%20R",
+			expected: &Font{
+				Name: "新ゴ R",
+			},
+		},
+		{
+			input: "(%E6%96%B0%E3%82%B4%20R)",
+			expected: &Font{
+				Name: "新ゴ R",
+			},
+		},
+		{
+			input: "(DriveFlux,instance=B%20Italic)",
+			expected: &Font{
+				Name:     "DriveFlux",
+				Instance: "B Italic",
+			},
+		},
+		{
+			input: "(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700)",
+			expected: &Font{
+				Name: "DriveFlux",
+				Variables: map[string]float64{
+					"wght": 700,
+					"SMTH": 0,
+					"CNTR": 0,
+					"slnt": -16,
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		got, err := ParseFont(c.input)
+		if err != nil {
+			t.Errorf("ParseFont(%q) returned error: %v", c.input, err)
+			continue
+		}
+		if diff := cmp.Diff(got, c.expected); diff != "" {
+			t.Errorf("ParseFont(%q) = (+got / -expected) %s", c.input, diff)
+		}
+	}
+}
+
+func TestParseFont_Error(t *testing.T) {
+	cases := []string{
+		"(DriveFlux",                      // missing closing parenthesis
+		"(DriveFlux,instance=B%20Italic",  // missing closing parenthesis
+		"(DriveFlux,instance)",            // missing instance value
+		"(DriveFlux,var=CNTR)",            // missing ':'
+		"(DriveFlux,var=CNTR:NotANumber)", // invalid number
+		"(DriveFlux,unknown=Value)",       // unknown key
+	}
+
+	for _, c := range cases {
+		if _, err := ParseFont(c); err == nil {
+			t.Errorf("ParseFont(%q) did not return error", c)
+		}
+	}
+}
+
+func FuzzParseFont(f *testing.F) {
+	f.Add("")
+	f.Add("%E6%96%B0%E3%82%B4%20R")
+	f.Add("(%E6%96%B0%E3%82%B4%20R)")
+	f.Add("(DriveFlux,instance=B%20Italic)")
+	f.Add("(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700)")
+
+	f.Fuzz(func(t *testing.T, s string) {
+		font, err := ParseFont(s)
+		if err != nil {
+			return
+		}
+		s1 := font.String()
+		font2, err := ParseFont(s1)
+		if err != nil {
+			t.Errorf("ParseFont(%q) returned error: %v", s1, err)
+			return
+		}
+		if diff := cmp.Diff(font, font2); diff != "" {
+			t.Errorf("ParseFont(%q) = (+font / -font2) %s", s, diff)
+		}
+	})
+}
+
+func TestText_String(t *testing.T) {
 	cases := []struct {
 		text     *Text
 		expected string
@@ -212,8 +352,8 @@ func TestParseText(t *testing.T) {
 			t.Errorf("ParseText(%q) returned error: %v", c.input, err)
 			continue
 		}
-		if diff := cmp.Diff(c.expected, got); diff != "" {
-			t.Errorf("ParseText(%q) = (+expected / -got) %s", c.input, diff)
+		if diff := cmp.Diff(got, c.expected); diff != "" {
+			t.Errorf("ParseText(%q) = (+got / -expected) %s", c.input, diff)
 		}
 	}
 }
