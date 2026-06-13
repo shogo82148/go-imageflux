@@ -82,7 +82,26 @@ func TestParseFont(t *testing.T) {
 			},
 		},
 		{
+			input: "(DriveFlux%2Cinstance=B%20Italic)",
+			expected: &Font{
+				Name:     "DriveFlux",
+				Instance: "B Italic",
+			},
+		},
+		{
 			input: "(DriveFlux,var=CNTR:0,var=SMTH:0,var=slnt:-16,var=wght:700)",
+			expected: &Font{
+				Name: "DriveFlux",
+				Variables: map[string]float64{
+					"wght": 700,
+					"SMTH": 0,
+					"CNTR": 0,
+					"slnt": -16,
+				},
+			},
+		},
+		{
+			input: "(DriveFlux%2Cvar=CNTR:0%2Cvar=SMTH:0%2Cvar=slnt:-16%2Cvar=wght:700)",
 			expected: &Font{
 				Name: "DriveFlux",
 				Variables: map[string]float64{

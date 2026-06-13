@@ -320,18 +320,11 @@ func (s *parseFontState) parseFont() (*Font, error) {
 	s.idx++
 
 	// parse font name
-	nameStart := s.idx
-	for nameEnd := s.idx; nameEnd < len(s.s); nameEnd++ {
-		if s.s[nameEnd] == ',' || s.s[nameEnd] == ')' {
-			name, err := url.PathUnescape(s.s[nameStart:nameEnd])
-			if err != nil {
-				return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s[nameStart:nameEnd], err)
-			}
-			s.font.Name = name
-			s.idx = nameEnd
-			break
-		}
+	name, err := url.PathUnescape(s.getValue())
+	if err != nil {
+		return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s, err)
 	}
+	s.font.Name = name
 	if s.idx >= len(s.s) {
 		return nil, errors.New("imageflux: unexpected end of font specification")
 	}
@@ -342,10 +335,9 @@ func (s *parseFontState) parseFont() (*Font, error) {
 
 	// parse parameters
 	for s.idx < len(s.s) && s.s[s.idx] != ')' {
-		if s.s[s.idx] != ',' {
+		if !s.skipComma() {
 			return nil, fmt.Errorf("imageflux: unexpected character %q in font specification", s.s[s.idx])
 		}
-		s.idx++
 
 		key, foundEqual := s.getKey()
 		if !foundEqual {
@@ -392,7 +384,7 @@ func (s *parseFontState) getKey() (key string, foundEqual bool) {
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, true
-		case ',', ')':
+		case ')':
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, false
@@ -403,14 +395,33 @@ func (s *parseFontState) getKey() (key string, foundEqual bool) {
 
 func (s *parseFontState) getValue() string {
 	i := s.idx
+LOOP:
 	for ; i < len(s.s); i++ {
-		if s.s[i] == ',' || s.s[i] == ')' {
-			break
+		switch s.s[i] {
+		case ',', ')':
+			break LOOP
+		case '%':
+			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				break LOOP
+			}
 		}
 	}
 	value := s.s[s.idx:i]
 	s.idx = i
 	return value
+}
+
+func (s *parseFontState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
+		return true
+	}
+	return false
 }
 
 // TextAlign specifies the alignment of the text.
