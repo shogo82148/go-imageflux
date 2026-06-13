@@ -22,7 +22,7 @@ func ExampleImage_SignedURL() {
 	fmt.Println(u)
 
 	// Output:
-	// https://demo.imageflux.jp/c/w=200,f=webp:auto/images/1.jpg
+	// https://demo.imageflux.jp/c/w=200%2Cf=webp:auto/images/1.jpg
 }
 
 func ExampleImage_SignedURL_signed() {
@@ -38,7 +38,7 @@ func ExampleImage_SignedURL_signed() {
 	fmt.Println(u)
 
 	// Output:
-	// https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg
+	// https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg
 }
 
 func ExampleImage_SignedURLWithoutComma() {

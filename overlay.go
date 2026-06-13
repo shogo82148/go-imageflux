@@ -1,6 +1,7 @@
 package imageflux
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -110,32 +111,31 @@ type Overlay struct {
 }
 
 func (o Overlay) String() string {
-	return string(o.append([]byte{}, false))
+	return string(o.append(nil))
 }
 
-func (o Overlay) append(buf []byte, escapeComma bool) []byte {
+func (o Overlay) append(buf []byte) []byte {
 	var zr image.Rectangle
 	var zp image.Point
 
-	l := len(buf)
 	if o.Width != 0 {
 		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(o.Width), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.Height != 0 {
 		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(o.Height), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.DisableEnlarge {
 		buf = append(buf, "u=0"...)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.AspectMode != AspectModeDefault {
 		buf = append(buf, "a="...)
 		buf = strconv.AppendInt(buf, int64(o.AspectMode-1), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	// clipping parameters
@@ -148,7 +148,7 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = strconv.AppendInt(buf, int64(ic.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(ic.Max.Y), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if cm, ic := o.ClipMax, o.InputClipRatio; cm != zp && ic != zr {
 		x1 := float64(ic.Min.X) / float64(cm.X)
@@ -163,12 +163,12 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if ig := o.InputOrigin; ig != OriginDefault {
 		buf = append(buf, "ig="...)
 		buf = strconv.AppendInt(buf, int64(ig), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if c, oc := o.Clip, o.OutputClip; c != zr || oc != zr {
 		if oc == zr {
@@ -182,7 +182,7 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = strconv.AppendInt(buf, int64(oc.Max.X), 10)
 		buf = append(buf, ':')
 		buf = strconv.AppendInt(buf, int64(oc.Max.Y), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if c, oc, cm := o.ClipRatio, o.OutputClipRatio, o.ClipMax; cm != zp && (c != zr || oc != zr) {
 		if oc == zr {
@@ -200,18 +200,18 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		buf = strconv.AppendFloat(buf, x2, 'f', -1, 64)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, y2, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if og := o.OutputOrigin; og != OriginDefault {
 		buf = append(buf, "og="...)
 		buf = strconv.AppendInt(buf, int64(og), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if o.Origin != OriginDefault {
 		buf = append(buf, 'g', '=')
 		buf = strconv.AppendInt(buf, int64(o.Origin), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.Background != nil {
 		b := color.NRGBAModel.Convert(o.Background).(color.NRGBA)
@@ -221,14 +221,14 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 			buf = appendByte(buf, b.R)
 			buf = appendByte(buf, b.G)
 			buf = appendByte(buf, b.B)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		} else {
 			buf = append(buf, "b="...)
 			buf = appendByte(buf, b.R)
 			buf = appendByte(buf, b.G)
 			buf = appendByte(buf, b.B)
 			buf = appendByte(buf, b.A)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		}
 	}
 
@@ -236,11 +236,11 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 	if ir := o.InputRotate; ir != RotateDefault {
 		if ir == RotateAuto {
 			buf = append(buf, "ir=auto"...)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		} else {
 			buf = append(buf, "ir="...)
 			buf = strconv.AppendInt(buf, int64(ir), 10)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		}
 	}
 	if r, or := o.Rotate, o.OutputRotate; r != RotateDefault || or != RotateDefault {
@@ -249,36 +249,36 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 		}
 		if or == RotateAuto {
 			buf = append(buf, "or=auto"...)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		} else {
 			buf = append(buf, "or="...)
 			buf = strconv.AppendInt(buf, int64(or), 10)
-			buf = appendComma(buf, escapeComma)
+			buf = appendComma(buf)
 		}
 	}
 
 	if o.Offset != zp {
 		buf = append(buf, "x="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.X), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 		buf = append(buf, "y="...)
 		buf = strconv.AppendInt(buf, int64(o.Offset.Y), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.OffsetRatio != zp && o.OffsetMax != zp {
 		x := float64(o.OffsetRatio.X) / float64(o.OffsetMax.X)
 		y := float64(o.OffsetRatio.Y) / float64(o.OffsetMax.Y)
 		buf = append(buf, "xr="...)
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 		buf = append(buf, "yr="...)
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if o.OverlayOrigin != OriginDefault {
 		buf = append(buf, "lg="...)
 		buf = strconv.AppendInt(buf, int64(o.OverlayOrigin), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	// mask
@@ -289,17 +289,11 @@ func (o Overlay) append(buf []byte, escapeComma bool) []byte {
 			buf = append(buf, ':')
 			buf = strconv.AppendInt(buf, int64(o.PaddingMode), 10)
 		}
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	// remove trailing comma
-	if len(buf) != l {
-		if escapeComma {
-			buf = buf[:len(buf)-3]
-		} else {
-			buf = buf[:len(buf)-1]
-		}
-	}
+	buf = bytes.TrimSuffix(buf, comma)
 
 	path := o.Path
 	if path == "" {

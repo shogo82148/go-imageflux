@@ -76,10 +76,10 @@ type Text struct {
 }
 
 func (t *Text) String() string {
-	return string(t.append(nil, false))
+	return string(t.append(nil))
 }
 
-func (t *Text) append(buf []byte, escapeComma bool) []byte {
+func (t *Text) append(buf []byte) []byte {
 	var zp image.Point
 
 	if t == nil || t.Text == "" {
@@ -89,13 +89,13 @@ func (t *Text) append(buf []byte, escapeComma bool) []byte {
 	if t.Font != nil && t.Font.Name != "" {
 		buf = append(buf, "font="...)
 		buf = t.Font.append(buf)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Size != 0 {
 		buf = append(buf, "size="...)
 		buf = strconv.AppendFloat(buf, t.Size, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Foreground != nil {
@@ -113,7 +113,7 @@ func (t *Text) append(buf []byte, escapeComma bool) []byte {
 			buf = appendByte(buf, f.B)
 			buf = appendByte(buf, f.A)
 		}
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Background != nil {
@@ -131,82 +131,82 @@ func (t *Text) append(buf []byte, escapeComma bool) []byte {
 			buf = appendByte(buf, b.B)
 			buf = appendByte(buf, b.A)
 		}
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Width != 0 {
 		buf = append(buf, "w="...)
 		buf = strconv.AppendInt(buf, int64(t.Width), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if t.Height != 0 {
 		buf = append(buf, "h="...)
 		buf = strconv.AppendInt(buf, int64(t.Height), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.LineSpacing != 0 {
 		buf = append(buf, "linespacing="...)
 		buf = strconv.AppendFloat(buf, t.LineSpacing, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Align != 0 {
 		buf = append(buf, "align="...)
 		buf = strconv.AppendInt(buf, int64(t.Align), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Direction != 0 {
 		buf = append(buf, "dir="...)
 		buf = strconv.AppendInt(buf, int64(t.Direction), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Wrap != 0 {
 		buf = append(buf, "wrap="...)
 		buf = strconv.AppendInt(buf, int64(t.Wrap), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Ellipsize {
 		buf = append(buf, "ellipsize=1"...)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Justify {
 		buf = append(buf, "justify=1"...)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Strike {
 		buf = append(buf, "strike=1"...)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.Offset != zp {
 		buf = append(buf, "x="...)
 		buf = strconv.AppendInt(buf, int64(t.Offset.X), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 		buf = append(buf, "y="...)
 		buf = strconv.AppendInt(buf, int64(t.Offset.Y), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 	if t.OffsetRatio != zp && t.OffsetMax.X != 0 && t.OffsetMax.Y != 0 {
 		x := float64(t.OffsetRatio.X) / float64(t.OffsetMax.X)
 		y := float64(t.OffsetRatio.Y) / float64(t.OffsetMax.Y)
 		buf = append(buf, "xr="...)
 		buf = strconv.AppendFloat(buf, x, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 		buf = append(buf, "yr="...)
 		buf = strconv.AppendFloat(buf, y, 'f', -1, 64)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	if t.OverlayOrigin != OriginDefault {
 		buf = append(buf, "lg="...)
 		buf = strconv.AppendInt(buf, int64(t.OverlayOrigin), 10)
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	// mask
@@ -217,7 +217,7 @@ func (t *Text) append(buf []byte, escapeComma bool) []byte {
 			buf = append(buf, ':')
 			buf = strconv.AppendInt(buf, int64(t.PaddingMode), 10)
 		}
-		buf = appendComma(buf, escapeComma)
+		buf = appendComma(buf)
 	}
 
 	// text MUST be the last parameter because it can contain any character.
@@ -266,7 +266,8 @@ func (f *Font) append(buf []byte) []byte {
 		instance := url.PathEscape(f.Instance)
 		buf = append(buf, '(')
 		buf = append(buf, name...)
-		buf = append(buf, ",instance="...)
+		buf = appendComma(buf)
+		buf = append(buf, "instance="...)
 		buf = append(buf, instance...)
 		buf = append(buf, ')')
 		return buf
@@ -282,7 +283,8 @@ func (f *Font) append(buf []byte) []byte {
 	buf = append(buf, '(')
 	buf = append(buf, name...)
 	for _, tag := range tags {
-		buf = append(buf, ",var="...)
+		buf = appendComma(buf)
+		buf = append(buf, "var="...)
 		buf = append(buf, url.PathEscape(tag)...)
 		buf = append(buf, ':')
 		buf = strconv.AppendFloat(buf, f.Variables[tag], 'f', -1, 64)
