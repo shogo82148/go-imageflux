@@ -398,6 +398,9 @@ const (
 	// FormatWebP encodes the image as WebP.
 	FormatWebP Format = "webp"
 
+	// FormatMP4 encodes the image as MP4.
+	FormatMP4 Format = "mp4"
+
 	// FormatWebPAuto encodes the image as a WebP if the client supports WebP.
 	// Otherwise, the image is encoded as the same format with the input image.
 	FormatWebPAuto Format = "webp:auto"
