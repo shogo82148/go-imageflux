@@ -169,6 +169,9 @@ var parseFontErrorCases = []string{
 	"(DriveFlux,instance)",            // missing instance value
 	"(DriveFlux,var=CNTR)",            // missing ':'
 	"(DriveFlux,var=CNTR:NotANumber)", // invalid number
+	"(DriveFlux,var=CNTR:NaN)",        // NaN is not a valid variable value
+	"(DriveFlux,var=CNTR:+Inf)",       // +Inf is not a valid variable value
+	"(DriveFlux,var=CNTR:-Inf)",       // -Inf is not a valid variable value
 	"(DriveFlux,unknown=Value)",       // unknown key
 }
 

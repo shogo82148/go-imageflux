@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"net/url"
 	"slices"
 	"strconv"
@@ -363,6 +364,9 @@ func (s *parseFontState) parseFont() (*Font, error) {
 			v, err := strconv.ParseFloat(after, 64)
 			if err != nil {
 				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", after, err)
+			}
+			if math.IsNaN(v) || math.IsInf(v, 0) {
+				return nil, fmt.Errorf("imageflux: invalid variable font value %q", after)
 			}
 			if s.font.Variables == nil {
 				s.font.Variables = make(map[string]float64)
