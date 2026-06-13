@@ -446,7 +446,7 @@ const (
 	// TextAlignRight aligns the text to the right.
 	TextAlignRight TextAlign = 2
 
-	textAlignMax TextAlign = 2
+	textAlignMax TextAlign = 3
 )
 
 // TextDirection specifies the direction of the text.
@@ -464,7 +464,7 @@ const (
 	// TextDirectionRTL is right to left.
 	TextDirectionRTL TextDirection = 2
 
-	textDirectionMax TextDirection = 2
+	textDirectionMax TextDirection = 3
 )
 
 // TextWrap specifies the wrap mode of the text.
@@ -474,15 +474,23 @@ const (
 	textWrapMin TextWrap = 0
 
 	// TextWrapLine is the default value of TextWrap.
+	// Break lines at allowed breakpoints.
+	// Allowed breakpoints are based on [UAX #14].
+	//
+	// [UAX #14]: https://unicode.org/reports/tr14/
 	TextWrapLine TextWrap = 0
 
-	// TextWrapChar is character wrap.
+	// TextWrapChar allows line breaks between arbitrary characters.
+	// Here, characters refer to grapheme clusters as defined in [UAX #29].
+	//
+	// [UAX #29]: https://unicode.org/reports/tr29/
 	TextWrapChar TextWrap = 1
 
-	// TextWrapLineChar is line and character wrap.
+	// TextWrapLineChar attempts to wrap lines at breakable positions,
+	// but if that is not possible, it wraps lines between arbitrary characters.
 	TextWrapLineChar TextWrap = 2
 
-	textWrapMax TextWrap = 2
+	textWrapMax TextWrap = 3
 )
 
 type textParseState struct {
@@ -563,7 +571,7 @@ func (s *textParseState) parseText() (*Text, error) {
 			return nil, err
 		}
 		if !s.skipComma() {
-			return nil, fmt.Errorf("imageflux: unexpected character %q after key %q", s.s[s.idx], key)
+			return nil, fmt.Errorf("imageflux: unexpected character after key %q", key)
 		}
 	}
 	if !foundText {
@@ -575,6 +583,36 @@ func (s *textParseState) parseText() (*Text, error) {
 		return nil, fmt.Errorf("imageflux: invalid text value %q: %w", text, err)
 	}
 	s.text.Text = text
+
+	// validate the parameters.
+	var errs []error
+	if s.text.Width <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: width must be positive, but got %d", s.text.Width))
+	}
+	if s.text.Height <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: height must be positive, but got %d", s.text.Height))
+	}
+	if s.text.Size <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: size must be positive, but got %f", s.text.Size))
+	}
+	if math.IsNaN(s.text.Size) || math.IsInf(s.text.Size, 0) {
+		errs = append(errs, fmt.Errorf("imageflux: invalid size value %f", s.text.Size))
+	}
+	if math.IsNaN(s.text.LineSpacing) || math.IsInf(s.text.LineSpacing, 0) {
+		errs = append(errs, fmt.Errorf("imageflux: invalid line spacing value %f", s.text.LineSpacing))
+	}
+	if s.text.Align < textAlignMin || s.text.Align >= textAlignMax {
+		errs = append(errs, fmt.Errorf("imageflux: align value must be between %d and %d, but got %d", textAlignMin, textAlignMax, s.text.Align))
+	}
+	if s.text.Direction < textDirectionMin || s.text.Direction >= textDirectionMax {
+		errs = append(errs, fmt.Errorf("imageflux: direction value must be between %d and %d, but got %d", textDirectionMin, textDirectionMax, s.text.Direction))
+	}
+	if s.text.Wrap < textWrapMin || s.text.Wrap >= textWrapMax {
+		errs = append(errs, fmt.Errorf("imageflux: wrap value must be between %d and %d, but got %d", textWrapMin, textWrapMax, s.text.Wrap))
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
 
 	return s.text, nil
 }
@@ -592,9 +630,6 @@ func (s *textParseState) setValue(key, value string) error {
 		size, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid size value %q: %w", value, err)
-		}
-		if size <= 0 {
-			return fmt.Errorf("imageflux: size must be positive, but got %f", size)
 		}
 		s.text.Size = size
 
@@ -617,18 +652,12 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid width value %q: %w", value, err)
 		}
-		if w <= 0 {
-			return fmt.Errorf("imageflux: width must be positive, but got %d", w)
-		}
 		s.text.Width = w
 
 	case "h":
 		h, err := strconv.Atoi(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid height value %q: %w", value, err)
-		}
-		if h <= 0 {
-			return fmt.Errorf("imageflux: height must be positive, but got %d", h)
 		}
 		s.text.Height = h
 
@@ -644,18 +673,12 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid align value %q: %w", value, err)
 		}
-		if align < int(textAlignMin) || align > int(textAlignMax) {
-			return fmt.Errorf("imageflux: align value must be between %d and %d, but got %d", textAlignMin, textAlignMax, align)
-		}
 		s.text.Align = TextAlign(align)
 
 	case "dir":
 		dir, err := strconv.Atoi(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid direction value %q: %w", value, err)
-		}
-		if dir < int(textDirectionMin) || dir > int(textDirectionMax) {
-			return fmt.Errorf("imageflux: direction value must be between %d and %d, but got %d", textDirectionMin, textDirectionMax, dir)
 		}
 		s.text.Direction = TextDirection(dir)
 
@@ -664,40 +687,28 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid wrap value %q: %w", value, err)
 		}
-		if wrap < int(textWrapMin) || wrap > int(textWrapMax) {
-			return fmt.Errorf("imageflux: wrap value must be between %d and %d, but got %d", textWrapMin, textWrapMax, wrap)
-		}
 		s.text.Wrap = TextWrap(wrap)
 
 	case "ellipsize":
-		switch value {
-		case "1":
-			s.text.Ellipsize = true
-		case "0":
-			s.text.Ellipsize = false
-		default:
-			return fmt.Errorf("imageflux: invalid ellipsize value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid ellipsize value %q: %w", value, err)
 		}
+		s.text.Ellipsize = v
 
 	case "justify":
-		switch value {
-		case "1":
-			s.text.Justify = true
-		case "0":
-			s.text.Justify = false
-		default:
-			return fmt.Errorf("imageflux: invalid justify value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid justify value %q: %w", value, err)
 		}
+		s.text.Justify = v
 
 	case "strike":
-		switch value {
-		case "1":
-			s.text.Strike = true
-		case "0":
-			s.text.Strike = false
-		default:
-			return fmt.Errorf("imageflux: invalid strike value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid strike value %q: %w", value, err)
 		}
+		s.text.Strike = v
 
 	default:
 		return fmt.Errorf("imageflux: unknown key %q in text specification", key)

@@ -1581,3 +1581,14 @@ func parseColor(s string) (color.NRGBA, error) {
 	}
 	return color.NRGBA{}, fmt.Errorf("imageflux: invalid color %q", s)
 }
+
+func parseBoolean(s string) (bool, error) {
+	switch s {
+	case "0":
+		return false, nil
+	case "1":
+		return true, nil
+	default:
+		return false, fmt.Errorf("imageflux: invalid boolean %q", s)
+	}
+}
