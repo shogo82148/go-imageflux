@@ -743,9 +743,9 @@ var parseConfigCases = []struct {
 		},
 	},
 	{
-		input: "through=webp:gif:png:jpg",
+		input: "through=webp:gif:png:jpg:bmp:heic:auto",
 		want: &Config{
-			Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+			Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP | ThroughBMP | ThroughHEIC | ThroughAuto,
 		},
 	},
 
