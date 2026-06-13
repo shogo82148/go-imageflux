@@ -173,6 +173,7 @@ var parseFontErrorCases = []string{
 	"(DriveFlux,var=CNTR:+Inf)",       // +Inf is not a valid variable value
 	"(DriveFlux,var=CNTR:-Inf)",       // -Inf is not a valid variable value
 	"(DriveFlux,unknown=Value)",       // unknown key
+	"(DriveFlux)Extra",                // extra characters after closing parenthesis
 }
 
 func TestParseFont_Error(t *testing.T) {

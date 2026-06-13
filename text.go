@@ -326,13 +326,6 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s, err)
 	}
 	s.font.Name = name
-	if s.idx >= len(s.s) {
-		return nil, errors.New("imageflux: unexpected end of font specification")
-	}
-	if s.s[s.idx] == ')' {
-		s.idx++
-		return s.font, nil
-	}
 
 	// parse parameters
 	for s.idx < len(s.s) && s.s[s.idx] != ')' {
@@ -352,6 +345,7 @@ func (s *parseFontState) parseFont() (*Font, error) {
 				return nil, fmt.Errorf("imageflux: invalid instance value %q: %w", value, err)
 			}
 			s.font.Instance = instance
+
 		case "var":
 			value, err := url.PathUnescape(value)
 			if err != nil {
@@ -373,6 +367,7 @@ func (s *parseFontState) parseFont() (*Font, error) {
 				s.font.Variables = make(map[string]float64)
 			}
 			s.font.Variables[tag] = v
+
 		default:
 			return nil, fmt.Errorf("imageflux: unknown key %q in font specification", key)
 		}
@@ -381,6 +376,9 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		return nil, errors.New("imageflux: unexpected end of font specification")
 	}
 	s.idx++
+	if s.idx < len(s.s) {
+		return nil, fmt.Errorf("imageflux: extra characters after closing parenthesis in font specification: %q", s.s[s.idx:])
+	}
 
 	return s.font, nil
 }
