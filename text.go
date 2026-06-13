@@ -337,13 +337,14 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		s.idx++
 		return s.font, nil
 	}
-	if s.s[s.idx] != ',' {
-		return nil, fmt.Errorf("imageflux: unexpected character %q in font specification", s.s[s.idx])
-	}
-	s.idx++
 
 	// parse parameters
 	for s.idx < len(s.s) && s.s[s.idx] != ')' {
+		if s.s[s.idx] != ',' {
+			return nil, fmt.Errorf("imageflux: unexpected character %q in font specification", s.s[s.idx])
+		}
+		s.idx++
+
 		key, foundEqual := s.getKey()
 		if !foundEqual {
 			return nil, fmt.Errorf("imageflux: missing '=' after key %q in font specification", key)
@@ -402,7 +403,7 @@ func (s *parseFontState) getValue() string {
 		}
 	}
 	value := s.s[s.idx:i]
-	s.idx = i + 1
+	s.idx = i
 	return value
 }
 
