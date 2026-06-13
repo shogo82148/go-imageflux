@@ -492,12 +492,8 @@ type textParseState struct {
 }
 
 func ParseText(s string) (*Text, error) {
-	ss, err := url.PathUnescape(s)
-	if err != nil {
-		return nil, err
-	}
 	state := &textParseState{
-		s:    ss,
+		s:    s,
 		idx:  0,
 		text: &Text{},
 	}
@@ -512,10 +508,6 @@ func (s *textParseState) getKey() (key string, foundEqual bool) {
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, true
-		case ',':
-			key = s.s[s.idx:i]
-			s.idx = i + 1
-			return key, false
 		}
 	}
 	return s.s[s.idx:i], false
@@ -523,14 +515,33 @@ func (s *textParseState) getKey() (key string, foundEqual bool) {
 
 func (s *textParseState) getValue() string {
 	i := s.idx
+LOOP:
 	for ; i < len(s.s); i++ {
-		if s.s[i] == ',' {
-			break
+		switch s.s[i] {
+		case ',':
+			break LOOP
+		case '%':
+			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				break LOOP
+			}
 		}
 	}
 	value := s.s[s.idx:i]
-	s.idx = i + 1
+	s.idx = i
 	return value
+}
+
+func (s *textParseState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
+		return true
+	}
+	return false
 }
 
 func (s *textParseState) parseText() (*Text, error) {
@@ -551,11 +562,18 @@ func (s *textParseState) parseText() (*Text, error) {
 		if err := s.setValue(key, value); err != nil {
 			return nil, err
 		}
+		if !s.skipComma() {
+			return nil, fmt.Errorf("imageflux: unexpected character %q after key %q", s.s[s.idx], key)
+		}
 	}
 	if !foundText {
 		return nil, errors.New("imageflux: missing text parameter")
 	}
 	text := s.s[s.idx:]
+	text, err := url.PathUnescape(text)
+	if err != nil {
+		return nil, fmt.Errorf("imageflux: invalid text value %q: %w", text, err)
+	}
 	s.text.Text = text
 
 	return s.text, nil
@@ -680,6 +698,9 @@ func (s *textParseState) setValue(key, value string) error {
 		default:
 			return fmt.Errorf("imageflux: invalid strike value %q: must be 0 or 1", value)
 		}
+
+	default:
+		return fmt.Errorf("imageflux: unknown key %q in text specification", key)
 	}
 	return nil
 }

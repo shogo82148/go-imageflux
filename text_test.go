@@ -407,6 +407,18 @@ var parseTextCases = []struct {
 			Text:   "Hello, world!",
 		},
 	},
+	{
+		input: "font=%E6%96%B0%E3%82%B4%20R%2Csize=12%2Cw=400%2Ch=100%2Ctext=Hello%2C%20world%21",
+		expected: &Text{
+			Font: &Font{
+				Name: "新ゴ R",
+			},
+			Height: 100,
+			Width:  400,
+			Size:   12,
+			Text:   "Hello, world!",
+		},
+	},
 }
 
 func TestParseText(t *testing.T) {
