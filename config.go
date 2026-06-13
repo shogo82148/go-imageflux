@@ -522,12 +522,8 @@ func (r Rotate) String() string {
 type Through int
 
 const (
-	// ThroughAuto skip converting the image if ImageFlux does not
-	// support the format of the input image.
-	ThroughAuto Through = 1 << iota
-
 	// ThroughJPEG skips converting JPEG images.
-	ThroughJPEG
+	ThroughJPEG Through = 1 << iota
 
 	// ThroughPNG skips converting PNG images.
 	ThroughPNG
@@ -543,6 +539,10 @@ const (
 
 	// ThroughHEIC skips converting HEIC images.
 	ThroughHEIC
+
+	// ThroughAuto skip converting the image if ImageFlux does not
+	// support the format of the input image.
+	ThroughAuto
 )
 
 func (t Through) String() string {
