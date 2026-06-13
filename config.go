@@ -536,6 +536,16 @@ const (
 
 	// ThroughWebP skips converting WebP images.
 	ThroughWebP
+
+	// ThroughBMP skips converting BMP images.
+	ThroughBMP
+
+	// ThroughHEIC skips converting HEIC images.
+	ThroughHEIC
+
+	// ThroughAuto skip converting the image if ImageFlux does not
+	// support the format of the input image.
+	ThroughAuto
 )
 
 func (t Through) String() string {
@@ -544,6 +554,7 @@ func (t Through) String() string {
 }
 
 func (t Through) append(buf []byte) []byte {
+	l := len(buf)
 	if (t & ThroughJPEG) != 0 {
 		buf = append(buf, "jpg:"...)
 	}
@@ -556,7 +567,16 @@ func (t Through) append(buf []byte) []byte {
 	if (t & ThroughWebP) != 0 {
 		buf = append(buf, "webp:"...)
 	}
-	if len(buf) == 0 {
+	if (t & ThroughBMP) != 0 {
+		buf = append(buf, "bmp:"...)
+	}
+	if (t & ThroughHEIC) != 0 {
+		buf = append(buf, "heic:"...)
+	}
+	if (t & ThroughAuto) != 0 {
+		buf = append(buf, "auto:"...)
+	}
+	if len(buf) == l {
 		return buf
 	}
 	return buf[:len(buf)-1]
@@ -582,6 +602,12 @@ func parseThrough(s string) (Through, error) {
 			t |= ThroughGIF
 		case "webp":
 			t |= ThroughWebP
+		case "bmp":
+			t |= ThroughBMP
+		case "heic":
+			t |= ThroughHEIC
+		case "auto":
+			t |= ThroughAuto
 		default:
 			return 0, fmt.Errorf("imageflux: unknown through format: %s", v)
 		}
