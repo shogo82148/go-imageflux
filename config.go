@@ -522,8 +522,12 @@ func (r Rotate) String() string {
 type Through int
 
 const (
+	// ThroughAuto skip converting the image if ImageFlux does not
+	// support the format of the input image.
+	ThroughAuto Through = 1 << iota
+
 	// ThroughJPEG skips converting JPEG images.
-	ThroughJPEG Through = 1 << iota
+	ThroughJPEG
 
 	// ThroughPNG skips converting PNG images.
 	ThroughPNG
@@ -533,6 +537,12 @@ const (
 
 	// ThroughWebP skips converting WebP images.
 	ThroughWebP
+
+	// ThroughBMP skips converting BMP images.
+	ThroughBMP
+
+	// ThroughHEIC skips converting HEIC images.
+	ThroughHEIC
 )
 
 func (t Through) String() string {
@@ -552,6 +562,15 @@ func (t Through) append(buf []byte) []byte {
 	}
 	if (t & ThroughWebP) != 0 {
 		buf = append(buf, "webp:"...)
+	}
+	if (t & ThroughBMP) != 0 {
+		buf = append(buf, "bmp:"...)
+	}
+	if (t & ThroughHEIC) != 0 {
+		buf = append(buf, "heic:"...)
+	}
+	if (t & ThroughAuto) != 0 {
+		buf = append(buf, "auto:"...)
 	}
 	if len(buf) == 0 {
 		return buf

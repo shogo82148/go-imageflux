@@ -36,7 +36,7 @@ func BenchmarkConfig(b *testing.B) {
 		Background:      color.Black,
 		InputRotate:     RotateLeftBottom,
 		OutputRotate:    RotateLeftBottom,
-		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
+		Through:         ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP | ThroughBMP | ThroughHEIC | ThroughAuto,
 		Overlays: []*Overlay{
 			{
 				Path:            "/images/1.png",
@@ -330,6 +330,12 @@ var configStringCases = []struct {
 			Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP,
 		},
 		output: "through=jpg:png:gif:webp",
+	},
+	{
+		config: &Config{
+			Through: ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP | ThroughBMP | ThroughHEIC | ThroughAuto,
+		},
+		output: "through=jpg:png:gif:webp:bmp:heic:auto",
 	},
 
 	// overlays
