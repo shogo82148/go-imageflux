@@ -518,7 +518,7 @@ func (r Rotate) String() string {
 	case RotateAuto:
 		return "auto"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(r))
 }
 
 // Through is an image format list for skipping converting.

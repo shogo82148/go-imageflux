@@ -96,6 +96,64 @@ func TestFormat_String(t *testing.T) {
 	}
 }
 
+func TestRotate_String(t *testing.T) {
+	cases := []struct {
+		rotate Rotate
+		want   string
+	}{
+		{
+			RotateAuto,
+			"auto",
+		},
+		{
+			RotateDefault,
+			"default",
+		},
+		{
+			RotateTopLeft,
+			"top-left",
+		},
+		{
+			RotateTopRight,
+			"top-right",
+		},
+		{
+			RotateBottomRight,
+			"bottom-right",
+		},
+		{
+			RotateBottomLeft,
+			"bottom-left",
+		},
+		{
+			RotateLeftTop,
+			"left-top",
+		},
+		{
+			RotateRightTop,
+			"right-top",
+		},
+		{
+			RotateRightBottom,
+			"right-bottom",
+		},
+		{
+			RotateLeftBottom,
+			"left-bottom",
+		},
+		{
+			Rotate(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.rotate.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
 	nowFunc = func() time.Time {
