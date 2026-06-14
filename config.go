@@ -549,8 +549,7 @@ const (
 )
 
 func (t Through) String() string {
-	var buf [32]byte
-	return string(t.append(buf[:]))
+	return string(t.append(nil))
 }
 
 func (t Through) append(buf []byte) []byte {

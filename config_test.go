@@ -154,6 +154,32 @@ func TestRotate_String(t *testing.T) {
 	}
 }
 
+func TestThrough_String(t *testing.T) {
+	cases := []struct {
+		through Through
+		want    string
+	}{
+		{
+			0,
+			"",
+		},
+		{
+			ThroughJPEG,
+			"jpg",
+		},
+		{
+			ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP | ThroughBMP | ThroughHEIC | ThroughAuto,
+			"jpg:png:gif:webp:bmp:heic:auto",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.through.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
 	nowFunc = func() time.Time {
