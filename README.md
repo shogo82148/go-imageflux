@@ -1,6 +1,6 @@
 # go-imageflux
 
-[![Build Status](https://github.com/shogo82148/go-imageflux/workflows/test/badge.svg?branch=main)](https://github.com/shogo82148/go-imageflux/actions)
+[![test](https://github.com/shogo82148/go-imageflux/actions/workflows/test.yml/badge.svg)](https://github.com/shogo82148/go-imageflux/actions/workflows/test.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/shogo82148/go-imageflux.svg)](https://pkg.go.dev/github.com/shogo82148/go-imageflux)
 
 URL builder and parser for [ImageFlux](https://imageflux.sakura.ad.jp/).
@@ -32,7 +32,7 @@ u := proxy.Image("/images/1.jpg", cfg).SignedURL()
 fmt.Println(u)
 
 // Output:
-// https://demo.imageflux.jp/c/w=200,f=webp:auto/images/1.jpg
+// https://demo.imageflux.jp/c/w=200%2Cf=webp:auto/images/1.jpg
 ```
 
 ### Build Signed URL
@@ -53,7 +53,7 @@ u := proxy.Image("/images/1.jpg", cfg).SignedURL()
 fmt.Println(u)
 
 // Output:
-// https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg
+// https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg
 ```
 
 ### Parse URL
