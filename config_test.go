@@ -1454,6 +1454,10 @@ var parseConfigErrorCases = []string{
 
 	// https://github.com/shogo82148/go-imageflux/pull/48
 	"s=1%2Cf=%2C",
+
+	// text overlays
+	"t=invalid",
+	"t=(invalid)",
 }
 
 func TestParseConfig_error(t *testing.T) {
