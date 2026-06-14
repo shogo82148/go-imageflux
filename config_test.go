@@ -70,6 +70,32 @@ func TestOrigin_String(t *testing.T) {
 	}
 }
 
+func TestFormat_String(t *testing.T) {
+	cases := []struct {
+		format Format
+		want   string
+	}{
+		{
+			FormatAuto,
+			"auto",
+		},
+		{
+			FormatJPEG,
+			"jpg",
+		},
+		{
+			FormatPNG,
+			"png",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.format.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
 	nowFunc = func() time.Time {
