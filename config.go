@@ -1364,25 +1364,19 @@ func (s *parseState) setValue(key, value string) error {
 
 	// DisableOptimization
 	case "o":
-		switch value {
-		case "0":
-			s.config.DisableOptimization = true
-		case "1":
-			s.config.DisableOptimization = false
-		default:
-			return fmt.Errorf("imageflux: invalid optimization %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid optimization %q: %w", value, err)
 		}
+		s.config.DisableOptimization = !v
 
 	// Lossless
 	case "lossless":
-		switch value {
-		case "0":
-			s.config.Lossless = false
-		case "1":
-			s.config.Lossless = true
-		default:
-			return fmt.Errorf("imageflux: invalid lossless %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid lossless %q: %w", value, err)
 		}
+		s.config.Lossless = v
 
 	// ExifOption
 	case "s":
@@ -1442,14 +1436,11 @@ func (s *parseState) setValue(key, value string) error {
 
 	// Invert
 	case "invert":
-		switch value {
-		case "0":
-			s.config.Invert = false
-		case "1":
-			s.config.Invert = true
-		default:
-			return fmt.Errorf("imageflux: invalid invert %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid invert %q: %w", value, err)
 		}
+		s.config.Invert = v
 
 	// Texts
 	case "t":

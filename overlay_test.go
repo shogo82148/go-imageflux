@@ -14,6 +14,10 @@ func TestOverlay(t *testing.T) {
 		output  string
 	}{
 		{
+			overlay: &Overlay{},
+			output:  "",
+		},
+		{
 			overlay: &Overlay{
 				Width:  100,
 				Height: 200,
@@ -283,6 +287,15 @@ var parseOverlayCases = []struct {
 		want: &Overlay{
 			AspectMode: AspectModePad,
 			Path:       "/images/1.png",
+		},
+	},
+
+	// disable enlarge
+	{
+		input: "u=0%2Fimages%2F1.png",
+		want: &Overlay{
+			Path:           "/images/1.png",
+			DisableEnlarge: true,
 		},
 	},
 

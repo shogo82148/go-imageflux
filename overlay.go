@@ -445,14 +445,11 @@ func (s *overlayParseState) setValue(key, value string) error {
 
 	// DisableEnlarge
 	case "u":
-		switch value {
-		case "0":
-			s.overlay.DisableEnlarge = true
-		case "1":
-			s.overlay.DisableEnlarge = false
-		default:
-			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid disable enlarge %q: %w", value, err)
 		}
+		s.overlay.DisableEnlarge = !v
 
 	// AspectMode
 	case "a":
