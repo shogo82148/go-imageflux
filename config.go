@@ -376,7 +376,7 @@ func (o Origin) String() string {
 	case OriginBottomRight:
 		return "bottom-right"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(o))
 }
 
 // Format is the format of the output image.

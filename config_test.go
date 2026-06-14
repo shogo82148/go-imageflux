@@ -12,6 +12,64 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestOrigin_String(t *testing.T) {
+	cases := []struct {
+		origin Origin
+		want   string
+	}{
+		{
+			OriginDefault,
+			"default",
+		},
+		{
+			OriginTopLeft,
+			"top-left",
+		},
+		{
+			OriginTopCenter,
+			"top-center",
+		},
+		{
+			OriginTopRight,
+			"top-right",
+		},
+		{
+			OriginMiddleLeft,
+			"middle-left",
+		},
+		{
+			OriginMiddleCenter,
+			"middle-center",
+		},
+		{
+			OriginMiddleRight,
+			"middle-right",
+		},
+		{
+			OriginBottomLeft,
+			"bottom-left",
+		},
+		{
+			OriginBottomCenter,
+			"bottom-center",
+		},
+		{
+			OriginBottomRight,
+			"bottom-right",
+		},
+		{
+			Origin(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.origin.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
 	nowFunc = func() time.Time {
@@ -73,6 +131,19 @@ func BenchmarkConfig(b *testing.B) {
 		Blur: Blur{
 			Radius: 10,
 			Sigma:  1.0,
+		},
+		Texts: []*Text{
+			{
+				Font: &Font{
+					Name: "Ryumin R-KL",
+				},
+				Size:       30,
+				Width:      400,
+				Height:     80,
+				Align:      TextAlignCenter,
+				Foreground: color.White,
+				Text:       "テキストが\n合成できます",
+			},
 		},
 	}
 	for i := 0; i < b.N; i++ {
