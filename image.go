@@ -74,13 +74,18 @@ func (img *Image) pathAndSign() (string, string) {
 	buf = append(buf, img.Path...)
 	path := string(buf)
 
-	if img.Proxy.Secret == "" {
+	secret := img.Proxy.SecretBytes
+	if len(secret) == 0 && img.Proxy.Secret != "" {
+		secret = []byte(img.Proxy.Secret)
+	}
+
+	if len(secret) == 0 {
 		*pbuf = buf
 		bufPool.Put(pbuf)
 		return path, ""
 	}
 
-	mac := hmac.New(sha256.New, []byte(img.Proxy.Secret))
+	mac := hmac.New(sha256.New, secret)
 	mac.Write(buf)
 	buf = mac.Sum(buf[:0])
 	buf2 := make([]byte, len("1.")+base64.URLEncoding.EncodedLen(len(buf)))

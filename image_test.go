@@ -10,8 +10,8 @@ var jst *time.Location = time.FixedZone("Asia/Tokyo", 9*60*60)
 func BenchmarkImage(b *testing.B) {
 	img := &Image{
 		Proxy: &Proxy{
-			Host:   "demo.imageflux.jp",
-			Secret: "testsigningsecret",
+			Host:        "demo.imageflux.jp",
+			SecretBytes: []byte("testsigningsecret"),
 		},
 		Path: "/images/1.jpg",
 		Config: &Config{
