@@ -52,6 +52,85 @@ func TestImage_SignedURL(t *testing.T) {
 		{
 			&Image{
 				Proxy: &Proxy{
+					Host:        "demo.imageflux.jp",
+					SecretBytes: []byte("testsigningsecret"),
+				},
+				Path: "/images/1.jpg",
+			},
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=%2Cf=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:        "demo.imageflux.jp",
+					SecretBytes: []byte("testsigningsecret"),
+				},
+				Path:   "/images/1.jpg",
+				Config: &Config{},
+			},
+			"https://demo.imageflux.jp/c/sig=1.tbCHoq4CHTiwxkfATFMnYqrJ7jcjG4D34B_oPQkzf-k=%2Cf=auto/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:        "demo.imageflux.jp",
+					SecretBytes: []byte("testsigningsecret"),
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+			},
+			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path:    "/images/1.jpg",
+				Expires: time.Date(9999, 12, 31, 23, 59, 59, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/f=auto%2Cexpires=9999-12-31T14:59:59Z/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:        "demo.imageflux.jp",
+					SecretBytes: []byte("testsigningsecret"),
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+				Expires: time.Date(9999, 12, 31, 23, 59, 59, 123456789, jst),
+			},
+			"https://demo.imageflux.jp/c/sig=1.UfcQfFM5BpKkPXAs-SG96xA7Cm2JWbjwhl32AdhsgWM=%2Cw=200%2Cexpires=9999-12-31T14:59:59Z/images/1.jpg",
+		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host: "demo.imageflux.jp",
+				},
+				Path: "/bridge.jpg",
+				Config: &Config{
+					Width: 400,
+					Overlays: []*Overlay{
+						{
+							Width: 300,
+							URL:   "images/1.png",
+						},
+					},
+					Format: FormatWebPAuto,
+				},
+			},
+			"https://demo.imageflux.jp/c/w=400%2Cl=(w=300%2Fimages%2F1.png)%2Cf=webp:auto/bridge.jpg",
+		},
+
+		// tests for backward compatibility with Secret field.
+		{
+			&Image{
+				Proxy: &Proxy{
 					Host:   "demo.imageflux.jp",
 					Secret: "testsigningsecret",
 				},
@@ -82,49 +161,6 @@ func TestImage_SignedURL(t *testing.T) {
 				},
 			},
 			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg",
-		},
-		{
-			&Image{
-				Proxy: &Proxy{
-					Host: "demo.imageflux.jp",
-				},
-				Path:    "/images/1.jpg",
-				Expires: time.Date(9999, 12, 31, 23, 59, 59, 123456789, jst),
-			},
-			"https://demo.imageflux.jp/c/f=auto%2Cexpires=9999-12-31T14:59:59Z/images/1.jpg",
-		},
-		{
-			&Image{
-				Proxy: &Proxy{
-					Host:   "demo.imageflux.jp",
-					Secret: "testsigningsecret",
-				},
-				Path: "/images/1.jpg",
-				Config: &Config{
-					Width: 200,
-				},
-				Expires: time.Date(9999, 12, 31, 23, 59, 59, 123456789, jst),
-			},
-			"https://demo.imageflux.jp/c/sig=1.UfcQfFM5BpKkPXAs-SG96xA7Cm2JWbjwhl32AdhsgWM=%2Cw=200%2Cexpires=9999-12-31T14:59:59Z/images/1.jpg",
-		},
-		{
-			&Image{
-				Proxy: &Proxy{
-					Host: "demo.imageflux.jp",
-				},
-				Path: "/bridge.jpg",
-				Config: &Config{
-					Width: 400,
-					Overlays: []*Overlay{
-						{
-							Width: 300,
-							URL:   "images/1.png",
-						},
-					},
-					Format: FormatWebPAuto,
-				},
-			},
-			"https://demo.imageflux.jp/c/w=400%2Cl=(w=300%2Fimages%2F1.png)%2Cf=webp:auto/bridge.jpg",
 		},
 	}
 
