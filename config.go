@@ -942,7 +942,7 @@ func (a AspectMode) String() string {
 	case AspectModePad:
 		return "pad"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(a))
 }
 
 func ParseConfig(s string) (config *Config, rest string, err error) {

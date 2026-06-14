@@ -180,6 +180,40 @@ func TestThrough_String(t *testing.T) {
 	}
 }
 
+func TestAspectMode_String(t *testing.T) {
+	cases := []struct {
+		aspectMode AspectMode
+		want       string
+	}{
+		{
+			AspectModeDefault,
+			"default",
+		},
+		{
+			AspectModeScale,
+			"scale",
+		},
+		{
+			AspectModeForceScale,
+			"force-scale",
+		},
+		{
+			AspectModePad,
+			"pad",
+		},
+		{
+			AspectMode(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.aspectMode.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
 	nowFunc = func() time.Time {
