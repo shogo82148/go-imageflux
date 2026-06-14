@@ -316,13 +316,8 @@ type overlayParseState struct {
 
 // ParseOverlay parses an overlay image.
 func ParseOverlay(s string) (*Overlay, error) {
-	ss, err := url.PathUnescape(s)
-	if err != nil {
-		return nil, err
-	}
-
 	state := overlayParseState{
-		s:       ss,
+		s:       s,
 		overlay: &Overlay{},
 	}
 	return state.parseOverlay()
@@ -338,11 +333,19 @@ func (s *overlayParseState) getKey() (key string, foundEqual bool) {
 			s.idx = i + 1
 			foundEqual = true
 			return
-		case '/', ',':
+		case '/':
 			key = s.s[s.idx:i]
 			s.idx = i
 			foundEqual = false
 			return
+		case '%':
+			// "%2F" is encoded slash '/'.
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2f" || s.s[i:i+3] == "%2F") {
+				key = s.s[s.idx:i]
+				s.idx = i
+				foundEqual = false
+				return
+			}
 		}
 	}
 	return s.s[s.idx:i], false
@@ -351,9 +354,21 @@ func (s *overlayParseState) getKey() (key string, foundEqual bool) {
 // getValue returns the value at the current index and advances the index.
 func (s *overlayParseState) getValue() string {
 	i := s.idx
+LOOP:
 	for ; i < len(s.s); i++ {
-		if s.s[i] == ',' || s.s[i] == '/' {
-			break
+		switch s.s[i] {
+		case ',', '/':
+			break LOOP
+		case '%':
+			// "%2C" is encoded comma ','.
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				break LOOP
+			}
+
+			// "%2F" is encoded slash '/'.
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2f" || s.s[i:i+3] == "%2F") {
+				break LOOP
+			}
 		}
 	}
 	value := s.s[s.idx:i]
@@ -365,6 +380,11 @@ func (s *overlayParseState) getValue() string {
 func (s *overlayParseState) skipComma() (skipped bool) {
 	if s.idx < len(s.s) && s.s[s.idx] == ',' {
 		s.idx++
+		return true
+	}
+	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
 		return true
 	}
 	return false
@@ -385,7 +405,12 @@ func (s *overlayParseState) parseOverlay() (*Overlay, error) {
 			return nil, err
 		}
 	}
-	s.overlay.Path = s.s[s.idx:]
+
+	path, err := url.PathUnescape(s.s[s.idx:])
+	if err != nil {
+		return nil, fmt.Errorf("imageflux: invalid path: %w", err)
+	}
+	s.overlay.Path = path
 	if !strings.HasPrefix(s.overlay.Path, "/") {
 		s.overlay.Path = "/" + s.overlay.Path
 	}
@@ -420,14 +445,11 @@ func (s *overlayParseState) setValue(key, value string) error {
 
 	// DisableEnlarge
 	case "u":
-		switch value {
-		case "0":
-			s.overlay.DisableEnlarge = true
-		case "1":
-			s.overlay.DisableEnlarge = false
-		default:
-			return fmt.Errorf("imageflux: invalid disable enlarge %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid disable enlarge %q: %w", value, err)
 		}
+		s.overlay.DisableEnlarge = !v
 
 	// AspectMode
 	case "a":

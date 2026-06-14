@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"net/url"
 	"slices"
 	"strconv"
@@ -82,21 +83,17 @@ func (t *Text) String() string {
 func (t *Text) append(buf []byte) []byte {
 	var zp image.Point
 
-	if t == nil || t.Text == "" {
+	if t == nil {
 		return buf
 	}
 
-	if t.Font != nil && t.Font.Name != "" {
-		buf = append(buf, "font="...)
-		buf = t.Font.append(buf)
-		buf = appendComma(buf)
-	}
+	buf = append(buf, "font="...)
+	buf = t.Font.append(buf)
+	buf = appendComma(buf)
 
-	if t.Size != 0 {
-		buf = append(buf, "size="...)
-		buf = strconv.AppendFloat(buf, t.Size, 'f', -1, 64)
-		buf = appendComma(buf)
-	}
+	buf = append(buf, "size="...)
+	buf = strconv.AppendFloat(buf, t.Size, 'f', -1, 64)
+	buf = appendComma(buf)
 
 	if t.Foreground != nil {
 		f := color.NRGBAModel.Convert(t.Foreground).(color.NRGBA)
@@ -134,16 +131,15 @@ func (t *Text) append(buf []byte) []byte {
 		buf = appendComma(buf)
 	}
 
-	if t.Width != 0 {
-		buf = append(buf, "w="...)
-		buf = strconv.AppendInt(buf, int64(t.Width), 10)
-		buf = appendComma(buf)
-	}
-	if t.Height != 0 {
-		buf = append(buf, "h="...)
-		buf = strconv.AppendInt(buf, int64(t.Height), 10)
-		buf = appendComma(buf)
-	}
+	// width
+	buf = append(buf, "w="...)
+	buf = strconv.AppendInt(buf, int64(t.Width), 10)
+	buf = appendComma(buf)
+
+	// height
+	buf = append(buf, "h="...)
+	buf = strconv.AppendInt(buf, int64(t.Height), 10)
+	buf = appendComma(buf)
 
 	if t.LineSpacing != 0 {
 		buf = append(buf, "linespacing="...)
@@ -300,14 +296,6 @@ type parseFontState struct {
 }
 
 func ParseFont(s string) (*Font, error) {
-	s, err := url.PathUnescape(s)
-	if err != nil {
-		return nil, err
-	}
-	return parseFont(s)
-}
-
-func parseFont(s string) (*Font, error) {
 	state := &parseFontState{
 		s:    s,
 		idx:  0,
@@ -318,34 +306,27 @@ func parseFont(s string) (*Font, error) {
 
 func (s *parseFontState) parseFont() (*Font, error) {
 	if s.idx >= len(s.s) || s.s[s.idx] != '(' {
-		s.font.Name = s.s
+		name, err := url.PathUnescape(s.s)
+		if err != nil {
+			return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s, err)
+		}
+		s.font.Name = name
 		return s.font, nil
 	}
 	s.idx++
 
 	// parse font name
-	nameStart := s.idx
-	for nameEnd := s.idx; nameEnd < len(s.s); nameEnd++ {
-		if s.s[nameEnd] == ',' || s.s[nameEnd] == ')' {
-			s.font.Name = s.s[nameStart:nameEnd]
-			s.idx = nameEnd
-			break
-		}
+	name, err := url.PathUnescape(s.getValue())
+	if err != nil {
+		return nil, fmt.Errorf("imageflux: invalid font name %q: %w", s.s, err)
 	}
-	if s.idx >= len(s.s) {
-		return nil, errors.New("imageflux: unexpected end of font specification")
-	}
-	if s.s[s.idx] == ')' {
-		s.idx++
-		return s.font, nil
-	}
+	s.font.Name = name
 
 	// parse parameters
 	for s.idx < len(s.s) && s.s[s.idx] != ')' {
-		if s.s[s.idx] != ',' {
+		if !s.skipComma() {
 			return nil, fmt.Errorf("imageflux: unexpected character %q in font specification", s.s[s.idx])
 		}
-		s.idx++
 
 		key, foundEqual := s.getKey()
 		if !foundEqual {
@@ -354,20 +335,34 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		value := s.getValue()
 		switch key {
 		case "instance":
-			s.font.Instance = value
+			instance, err := url.PathUnescape(value)
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid instance value %q: %w", value, err)
+			}
+			s.font.Instance = instance
+
 		case "var":
-			tag, val, ok := strings.Cut(value, ":")
+			value, err := url.PathUnescape(value)
+			if err != nil {
+				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: %w", value, err)
+			}
+			before, after, ok := strings.Cut(value, ":")
 			if !ok {
 				return nil, fmt.Errorf("imageflux: invalid variable font specification %q: missing ':'", value)
 			}
-			v, err := strconv.ParseFloat(val, 64)
+			tag := before
+			v, err := strconv.ParseFloat(after, 64)
 			if err != nil {
-				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", val, err)
+				return nil, fmt.Errorf("imageflux: invalid variable font value %q: %w", after, err)
+			}
+			if math.IsNaN(v) || math.IsInf(v, 0) {
+				return nil, fmt.Errorf("imageflux: invalid variable font value %q", after)
 			}
 			if s.font.Variables == nil {
 				s.font.Variables = make(map[string]float64)
 			}
 			s.font.Variables[tag] = v
+
 		default:
 			return nil, fmt.Errorf("imageflux: unknown key %q in font specification", key)
 		}
@@ -376,6 +371,9 @@ func (s *parseFontState) parseFont() (*Font, error) {
 		return nil, errors.New("imageflux: unexpected end of font specification")
 	}
 	s.idx++
+	if s.idx < len(s.s) {
+		return nil, fmt.Errorf("imageflux: extra characters after closing parenthesis in font specification: %q", s.s[s.idx:])
+	}
 
 	return s.font, nil
 }
@@ -388,7 +386,7 @@ func (s *parseFontState) getKey() (key string, foundEqual bool) {
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, true
-		case ',', ')':
+		case ')':
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, false
@@ -399,14 +397,33 @@ func (s *parseFontState) getKey() (key string, foundEqual bool) {
 
 func (s *parseFontState) getValue() string {
 	i := s.idx
+LOOP:
 	for ; i < len(s.s); i++ {
-		if s.s[i] == ',' || s.s[i] == ')' {
-			break
+		switch s.s[i] {
+		case ',', ')':
+			break LOOP
+		case '%':
+			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				break LOOP
+			}
 		}
 	}
 	value := s.s[s.idx:i]
 	s.idx = i
 	return value
+}
+
+func (s *parseFontState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
+		return true
+	}
+	return false
 }
 
 // TextAlign specifies the alignment of the text.
@@ -424,7 +441,7 @@ const (
 	// TextAlignRight aligns the text to the right.
 	TextAlignRight TextAlign = 2
 
-	textAlignMax TextAlign = 2
+	textAlignMax TextAlign = 3
 )
 
 // TextDirection specifies the direction of the text.
@@ -442,7 +459,7 @@ const (
 	// TextDirectionRTL is right to left.
 	TextDirectionRTL TextDirection = 2
 
-	textDirectionMax TextDirection = 2
+	textDirectionMax TextDirection = 3
 )
 
 // TextWrap specifies the wrap mode of the text.
@@ -452,15 +469,23 @@ const (
 	textWrapMin TextWrap = 0
 
 	// TextWrapLine is the default value of TextWrap.
+	// Break lines at allowed breakpoints.
+	// Allowed breakpoints are based on [UAX #14].
+	//
+	// [UAX #14]: https://unicode.org/reports/tr14/
 	TextWrapLine TextWrap = 0
 
-	// TextWrapChar is character wrap.
+	// TextWrapChar allows line breaks between arbitrary characters.
+	// Here, characters refer to grapheme clusters as defined in [UAX #29].
+	//
+	// [UAX #29]: https://unicode.org/reports/tr29/
 	TextWrapChar TextWrap = 1
 
-	// TextWrapLineChar is line and character wrap.
+	// TextWrapLineChar attempts to wrap lines at breakable positions,
+	// but if that is not possible, it wraps lines between arbitrary characters.
 	TextWrapLineChar TextWrap = 2
 
-	textWrapMax TextWrap = 2
+	textWrapMax TextWrap = 3
 )
 
 type textParseState struct {
@@ -470,12 +495,8 @@ type textParseState struct {
 }
 
 func ParseText(s string) (*Text, error) {
-	ss, err := url.PathUnescape(s)
-	if err != nil {
-		return nil, err
-	}
 	state := &textParseState{
-		s:    ss,
+		s:    s,
 		idx:  0,
 		text: &Text{},
 	}
@@ -490,10 +511,6 @@ func (s *textParseState) getKey() (key string, foundEqual bool) {
 			key = s.s[s.idx:i]
 			s.idx = i + 1
 			return key, true
-		case ',':
-			key = s.s[s.idx:i]
-			s.idx = i + 1
-			return key, false
 		}
 	}
 	return s.s[s.idx:i], false
@@ -501,14 +518,33 @@ func (s *textParseState) getKey() (key string, foundEqual bool) {
 
 func (s *textParseState) getValue() string {
 	i := s.idx
+LOOP:
 	for ; i < len(s.s); i++ {
-		if s.s[i] == ',' {
-			break
+		switch s.s[i] {
+		case ',':
+			break LOOP
+		case '%':
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+				break LOOP
+			}
 		}
 	}
 	value := s.s[s.idx:i]
-	s.idx = i + 1
+	s.idx = i
 	return value
+}
+
+func (s *textParseState) skipComma() (skipped bool) {
+	if s.idx < len(s.s) && s.s[s.idx] == ',' {
+		s.idx++
+		return true
+	}
+	if s.idx+3 <= len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+		// "%2C" is encoded comma ','.
+		s.idx += 3
+		return true
+	}
+	return false
 }
 
 func (s *textParseState) parseText() (*Text, error) {
@@ -529,12 +565,52 @@ func (s *textParseState) parseText() (*Text, error) {
 		if err := s.setValue(key, value); err != nil {
 			return nil, err
 		}
+		if !s.skipComma() {
+			return nil, fmt.Errorf("imageflux: unexpected character after key %q", key)
+		}
 	}
 	if !foundText {
 		return nil, errors.New("imageflux: missing text parameter")
 	}
 	text := s.s[s.idx:]
+	text, err := url.PathUnescape(text)
+	if err != nil {
+		return nil, fmt.Errorf("imageflux: invalid text value %q: %w", text, err)
+	}
 	s.text.Text = text
+
+	// validate the parameters.
+	var errs []error
+	if s.text.Font == nil {
+		errs = append(errs, errors.New("imageflux: missing font parameter"))
+	}
+	if s.text.Width <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: width must be positive, but got %d", s.text.Width))
+	}
+	if s.text.Height <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: height must be positive, but got %d", s.text.Height))
+	}
+	if s.text.Size <= 0 {
+		errs = append(errs, fmt.Errorf("imageflux: size must be positive, but got %f", s.text.Size))
+	}
+	if math.IsNaN(s.text.Size) || math.IsInf(s.text.Size, 0) {
+		errs = append(errs, fmt.Errorf("imageflux: invalid size value %f", s.text.Size))
+	}
+	if math.IsNaN(s.text.LineSpacing) || math.IsInf(s.text.LineSpacing, 0) {
+		errs = append(errs, fmt.Errorf("imageflux: invalid line spacing value %f", s.text.LineSpacing))
+	}
+	if s.text.Align < textAlignMin || s.text.Align >= textAlignMax {
+		errs = append(errs, fmt.Errorf("imageflux: align value must be between %d and %d, but got %d", textAlignMin, textAlignMax, s.text.Align))
+	}
+	if s.text.Direction < textDirectionMin || s.text.Direction >= textDirectionMax {
+		errs = append(errs, fmt.Errorf("imageflux: direction value must be between %d and %d, but got %d", textDirectionMin, textDirectionMax, s.text.Direction))
+	}
+	if s.text.Wrap < textWrapMin || s.text.Wrap >= textWrapMax {
+		errs = append(errs, fmt.Errorf("imageflux: wrap value must be between %d and %d, but got %d", textWrapMin, textWrapMax, s.text.Wrap))
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
 
 	return s.text, nil
 }
@@ -542,7 +618,7 @@ func (s *textParseState) parseText() (*Text, error) {
 func (s *textParseState) setValue(key, value string) error {
 	switch key {
 	case "font":
-		font, err := parseFont(value)
+		font, err := ParseFont(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid font specification %q: %w", value, err)
 		}
@@ -552,9 +628,6 @@ func (s *textParseState) setValue(key, value string) error {
 		size, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid size value %q: %w", value, err)
-		}
-		if size <= 0 {
-			return fmt.Errorf("imageflux: size must be positive, but got %f", size)
 		}
 		s.text.Size = size
 
@@ -577,18 +650,12 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid width value %q: %w", value, err)
 		}
-		if w <= 0 {
-			return fmt.Errorf("imageflux: width must be positive, but got %d", w)
-		}
 		s.text.Width = w
 
 	case "h":
 		h, err := strconv.Atoi(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid height value %q: %w", value, err)
-		}
-		if h <= 0 {
-			return fmt.Errorf("imageflux: height must be positive, but got %d", h)
 		}
 		s.text.Height = h
 
@@ -604,18 +671,12 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid align value %q: %w", value, err)
 		}
-		if align < int(textAlignMin) || align > int(textAlignMax) {
-			return fmt.Errorf("imageflux: align value must be between %d and %d, but got %d", textAlignMin, textAlignMax, align)
-		}
 		s.text.Align = TextAlign(align)
 
 	case "dir":
 		dir, err := strconv.Atoi(value)
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid direction value %q: %w", value, err)
-		}
-		if dir < int(textDirectionMin) || dir > int(textDirectionMax) {
-			return fmt.Errorf("imageflux: direction value must be between %d and %d, but got %d", textDirectionMin, textDirectionMax, dir)
 		}
 		s.text.Direction = TextDirection(dir)
 
@@ -624,40 +685,31 @@ func (s *textParseState) setValue(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("imageflux: invalid wrap value %q: %w", value, err)
 		}
-		if wrap < int(textWrapMin) || wrap > int(textWrapMax) {
-			return fmt.Errorf("imageflux: wrap value must be between %d and %d, but got %d", textWrapMin, textWrapMax, wrap)
-		}
 		s.text.Wrap = TextWrap(wrap)
 
 	case "ellipsize":
-		switch value {
-		case "1":
-			s.text.Ellipsize = true
-		case "0":
-			s.text.Ellipsize = false
-		default:
-			return fmt.Errorf("imageflux: invalid ellipsize value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid ellipsize value %q: %w", value, err)
 		}
+		s.text.Ellipsize = v
 
 	case "justify":
-		switch value {
-		case "1":
-			s.text.Justify = true
-		case "0":
-			s.text.Justify = false
-		default:
-			return fmt.Errorf("imageflux: invalid justify value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid justify value %q: %w", value, err)
 		}
+		s.text.Justify = v
 
 	case "strike":
-		switch value {
-		case "1":
-			s.text.Strike = true
-		case "0":
-			s.text.Strike = false
-		default:
-			return fmt.Errorf("imageflux: invalid strike value %q: must be 0 or 1", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid strike value %q: %w", value, err)
 		}
+		s.text.Strike = v
+
+	default:
+		return fmt.Errorf("imageflux: unknown key %q in text specification", key)
 	}
 	return nil
 }

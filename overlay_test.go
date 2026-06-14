@@ -3,8 +3,9 @@ package imageflux
 import (
 	"image"
 	"image/color"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestOverlay(t *testing.T) {
@@ -12,6 +13,10 @@ func TestOverlay(t *testing.T) {
 		overlay *Overlay
 		output  string
 	}{
+		{
+			overlay: &Overlay{},
+			output:  "",
+		},
 		{
 			overlay: &Overlay{
 				Width:  100,
@@ -220,6 +225,12 @@ func TestOverlay(t *testing.T) {
 			},
 			output: "lg=8%2Fimages%2F1.png",
 		},
+		{
+			overlay: &Overlay{
+				Path: "//",
+			},
+			output: "%2F%2F",
+		},
 	}
 	for _, c := range cases {
 		if got := c.overlay.String(); got != c.output {
@@ -228,230 +239,260 @@ func TestOverlay(t *testing.T) {
 	}
 }
 
+var parseOverlayCases = []struct {
+	input string
+	want  *Overlay
+}{
+	{
+		input: "",
+		want: &Overlay{
+			Path: "/",
+		},
+	},
+	{
+		input: "%2F",
+		want: &Overlay{
+			Path: "/",
+		},
+	},
+	{
+		input: "//",
+		want: &Overlay{
+			Path: "//",
+		},
+	},
+	{
+		input: "%2F%2F",
+		want: &Overlay{
+			Path: "//",
+		},
+	},
+	{
+		input: "w=100%2Fimages%2F1.png",
+		want: &Overlay{
+			Width: 100,
+			Path:  "/images/1.png",
+		},
+	},
+	{
+		input: "w=100,h=200%2Fimages%2F1.png",
+		want: &Overlay{
+			Width:  100,
+			Height: 200,
+			Path:   "/images/1.png",
+		},
+	},
+	{
+		input: "a=3%2Fimages%2F1.png",
+		want: &Overlay{
+			AspectMode: AspectModePad,
+			Path:       "/images/1.png",
+		},
+	},
+
+	// disable enlarge
+	{
+		input: "u=0%2Fimages%2F1.png",
+		want: &Overlay{
+			Path:           "/images/1.png",
+			DisableEnlarge: true,
+		},
+	},
+
+	// clipping parameters
+	{
+		input: "ic=100:150:200:250%2Fimages%2F1.png",
+		want: &Overlay{
+			InputClip: image.Rect(100, 150, 200, 250),
+			Path:      "/images/1.png",
+		},
+	},
+	{
+		input: "icr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
+		want: &Overlay{
+			InputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:        image.Pt(65536, 65536),
+			Path:           "/images/1.png",
+		},
+	},
+	{
+		input: "ic=100:150:200:250,ig=5%2Fimages%2F1.png",
+		want: &Overlay{
+			InputClip:   image.Rect(100, 150, 200, 250),
+			InputOrigin: OriginMiddleCenter,
+			Path:        "/images/1.png",
+		},
+	},
+	{
+		input: "oc=100:150:200:250%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputClip: image.Rect(100, 150, 200, 250),
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		// for backward compatibility, you can use "c" instead of "oc".
+		input: "c=100:150:200:250%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputClip: image.Rect(100, 150, 200, 250),
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "ocr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
+			Path:            "/images/1.png",
+		},
+	},
+	{
+		// for backward compatibility, you can use "cr" instead of "ocr".
+		input: "cr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
+			ClipMax:         image.Pt(65536, 65536),
+			Path:            "/images/1.png",
+		},
+	},
+	{
+		input: "oc=100:150:200:250,og=5%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputClip:   image.Rect(100, 150, 200, 250),
+			OutputOrigin: OriginMiddleCenter,
+			Path:         "/images/1.png",
+		},
+	},
+
+	{
+		input: "g=1%2Fimages%2F1.png",
+		want: &Overlay{
+			Origin: OriginTopLeft,
+			Path:   "/images/1.png",
+		},
+	},
+	{
+		input: "b=000000%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0, G: 0, B: 0, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=ffffff%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=FFFFFF%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=ff0000%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0xff, G: 0, B: 0, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=00ff00%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0, G: 0xff, B: 0, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=0000ff%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0, G: 0, B: 0xff, A: 0xff},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=ffffff00%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00},
+			Path:       "/images/1.png",
+		},
+	},
+	{
+		input: "b=ffffff80%2Fimages%2F1.png",
+		want: &Overlay{
+			Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x80},
+			Path:       "/images/1.png",
+		},
+	},
+
+	// rotation
+	{
+		input: "ir=8%2Fimages%2F1.png",
+		want: &Overlay{
+			InputRotate: RotateLeftBottom,
+			Path:        "/images/1.png",
+		},
+	},
+	{
+		input: "ir=auto%2Fimages%2F1.png",
+		want: &Overlay{
+			InputRotate: RotateAuto,
+			Path:        "/images/1.png",
+		},
+	},
+	{
+		input: "or=8%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputRotate: RotateLeftBottom,
+			Path:         "/images/1.png",
+		},
+	},
+	{
+		input: "or=auto%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputRotate: RotateAuto,
+			Path:         "/images/1.png",
+		},
+	},
+	{
+		// for backward compatibility,
+		// you can use "r" instead of "or".
+		input: "r=8%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputRotate: RotateLeftBottom,
+			Path:         "/images/1.png",
+		},
+	},
+	{
+		// for backward compatibility,
+		// you can use "r" instead of "or".
+		input: "r=auto%2Fimages%2F1.png",
+		want: &Overlay{
+			OutputRotate: RotateAuto,
+			Path:         "/images/1.png",
+		},
+	},
+}
+
 func TestParseOverlay(t *testing.T) {
-	cases := []struct {
-		input string
-		want  *Overlay
-	}{
-		{
-			input: "",
-			want: &Overlay{
-				Path: "/",
-			},
-		},
-		{
-			input: "w=100%2Fimages%2F1.png",
-			want: &Overlay{
-				Width: 100,
-				Path:  "/images/1.png",
-			},
-		},
-		{
-			input: "w=100,h=200%2Fimages%2F1.png",
-			want: &Overlay{
-				Width:  100,
-				Height: 200,
-				Path:   "/images/1.png",
-			},
-		},
-		{
-			input: "a=3%2Fimages%2F1.png",
-			want: &Overlay{
-				AspectMode: AspectModePad,
-				Path:       "/images/1.png",
-			},
-		},
-
-		// clipping parameters
-		{
-			input: "ic=100:150:200:250%2Fimages%2F1.png",
-			want: &Overlay{
-				InputClip: image.Rect(100, 150, 200, 250),
-				Path:      "/images/1.png",
-			},
-		},
-		{
-			input: "icr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
-			want: &Overlay{
-				InputClipRatio: image.Rect(16384, 16384, 49152, 49152),
-				ClipMax:        image.Pt(65536, 65536),
-				Path:           "/images/1.png",
-			},
-		},
-		{
-			input: "ic=100:150:200:250,ig=5%2Fimages%2F1.png",
-			want: &Overlay{
-				InputClip:   image.Rect(100, 150, 200, 250),
-				InputOrigin: OriginMiddleCenter,
-				Path:        "/images/1.png",
-			},
-		},
-		{
-			input: "oc=100:150:200:250%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputClip: image.Rect(100, 150, 200, 250),
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			// for backward compatibility, you can use "c" instead of "oc".
-			input: "c=100:150:200:250%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputClip: image.Rect(100, 150, 200, 250),
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "ocr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
-				ClipMax:         image.Pt(65536, 65536),
-				Path:            "/images/1.png",
-			},
-		},
-		{
-			// for backward compatibility, you can use "cr" instead of "ocr".
-			input: "cr=0.25:0.25:0.75:0.75%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputClipRatio: image.Rect(16384, 16384, 49152, 49152),
-				ClipMax:         image.Pt(65536, 65536),
-				Path:            "/images/1.png",
-			},
-		},
-		{
-			input: "oc=100:150:200:250,og=5%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputClip:   image.Rect(100, 150, 200, 250),
-				OutputOrigin: OriginMiddleCenter,
-				Path:         "/images/1.png",
-			},
-		},
-
-		{
-			input: "g=1%2Fimages%2F1.png",
-			want: &Overlay{
-				Origin: OriginTopLeft,
-				Path:   "/images/1.png",
-			},
-		},
-		{
-			input: "b=000000%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0, G: 0, B: 0, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=ffffff%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=FFFFFF%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=ff0000%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0xff, G: 0, B: 0, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=00ff00%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0, G: 0xff, B: 0, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=0000ff%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0, G: 0, B: 0xff, A: 0xff},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=ffffff00%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x00},
-				Path:       "/images/1.png",
-			},
-		},
-		{
-			input: "b=ffffff80%2Fimages%2F1.png",
-			want: &Overlay{
-				Background: color.NRGBA{R: 0xff, G: 0xff, B: 0xff, A: 0x80},
-				Path:       "/images/1.png",
-			},
-		},
-
-		// rotation
-		{
-			input: "ir=8%2Fimages%2F1.png",
-			want: &Overlay{
-				InputRotate: RotateLeftBottom,
-				Path:        "/images/1.png",
-			},
-		},
-		{
-			input: "ir=auto%2Fimages%2F1.png",
-			want: &Overlay{
-				InputRotate: RotateAuto,
-				Path:        "/images/1.png",
-			},
-		},
-		{
-			input: "or=8%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputRotate: RotateLeftBottom,
-				Path:         "/images/1.png",
-			},
-		},
-		{
-			input: "or=auto%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputRotate: RotateAuto,
-				Path:         "/images/1.png",
-			},
-		},
-		{
-			// for backward compatibility,
-			// you can use "r" instead of "or".
-			input: "r=8%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputRotate: RotateLeftBottom,
-				Path:         "/images/1.png",
-			},
-		},
-		{
-			// for backward compatibility,
-			// you can use "r" instead of "or".
-			input: "r=auto%2Fimages%2F1.png",
-			want: &Overlay{
-				OutputRotate: RotateAuto,
-				Path:         "/images/1.png",
-			},
-		},
-	}
-
-	for _, c := range cases {
+	for _, c := range parseOverlayCases {
 		got, err := ParseOverlay(c.input)
 		if err != nil {
-			t.Errorf("%q: unexpected %v", c.input, err)
+			t.Errorf("%q: unexpected error: %v", c.input, err)
 		}
-		if !reflect.DeepEqual(got, c.want) {
-			t.Errorf("%q: want %#v, got %#v", c.input, c.want, got)
+		if diff := cmp.Diff(c.want, got); diff != "" {
+			t.Errorf("%q: mismatch (-want +got):\n%s", c.input, diff)
 		}
 	}
 }
 
 var parseOverlayErrorCases = []string{
+	// invalid percent encoding
+	"%2F%XX",
+
 	// common errors
 	"w=1,invalid",
 
@@ -592,4 +633,29 @@ func TestParseOverlay_error(t *testing.T) {
 			t.Errorf("%q: expected error", c)
 		}
 	}
+}
+
+func FuzzParseOverlay(f *testing.F) {
+	for _, c := range parseOverlayCases {
+		f.Add(c.input)
+	}
+	for _, c := range parseOverlayErrorCases {
+		f.Add(c)
+	}
+
+	f.Fuzz(func(t *testing.T, s string) {
+		overlay, err := ParseOverlay(s)
+		if err != nil {
+			return
+		}
+		s1 := overlay.String()
+		overlay2, err := ParseOverlay(s1)
+		if err != nil {
+			t.Errorf("%q: unexpected error: %v", s1, err)
+			return
+		}
+		if diff := cmp.Diff(overlay, overlay2); diff != "" {
+			t.Errorf("%q: (-overlay +overlay2) %s", s, diff)
+		}
+	})
 }

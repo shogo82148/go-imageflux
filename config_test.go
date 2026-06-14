@@ -5,11 +5,214 @@ import (
 	"image"
 	"image/color"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
+
+func TestOrigin_String(t *testing.T) {
+	cases := []struct {
+		origin Origin
+		want   string
+	}{
+		{
+			OriginDefault,
+			"default",
+		},
+		{
+			OriginTopLeft,
+			"top-left",
+		},
+		{
+			OriginTopCenter,
+			"top-center",
+		},
+		{
+			OriginTopRight,
+			"top-right",
+		},
+		{
+			OriginMiddleLeft,
+			"middle-left",
+		},
+		{
+			OriginMiddleCenter,
+			"middle-center",
+		},
+		{
+			OriginMiddleRight,
+			"middle-right",
+		},
+		{
+			OriginBottomLeft,
+			"bottom-left",
+		},
+		{
+			OriginBottomCenter,
+			"bottom-center",
+		},
+		{
+			OriginBottomRight,
+			"bottom-right",
+		},
+		{
+			Origin(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.origin.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
+func TestFormat_String(t *testing.T) {
+	cases := []struct {
+		format Format
+		want   string
+	}{
+		{
+			FormatAuto,
+			"auto",
+		},
+		{
+			FormatJPEG,
+			"jpg",
+		},
+		{
+			FormatPNG,
+			"png",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.format.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
+func TestRotate_String(t *testing.T) {
+	cases := []struct {
+		rotate Rotate
+		want   string
+	}{
+		{
+			RotateAuto,
+			"auto",
+		},
+		{
+			RotateDefault,
+			"default",
+		},
+		{
+			RotateTopLeft,
+			"top-left",
+		},
+		{
+			RotateTopRight,
+			"top-right",
+		},
+		{
+			RotateBottomRight,
+			"bottom-right",
+		},
+		{
+			RotateBottomLeft,
+			"bottom-left",
+		},
+		{
+			RotateLeftTop,
+			"left-top",
+		},
+		{
+			RotateRightTop,
+			"right-top",
+		},
+		{
+			RotateRightBottom,
+			"right-bottom",
+		},
+		{
+			RotateLeftBottom,
+			"left-bottom",
+		},
+		{
+			Rotate(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.rotate.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
+func TestThrough_String(t *testing.T) {
+	cases := []struct {
+		through Through
+		want    string
+	}{
+		{
+			0,
+			"",
+		},
+		{
+			ThroughJPEG,
+			"jpg",
+		},
+		{
+			ThroughJPEG | ThroughPNG | ThroughGIF | ThroughWebP | ThroughBMP | ThroughHEIC | ThroughAuto,
+			"jpg:png:gif:webp:bmp:heic:auto",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.through.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
+
+func TestAspectMode_String(t *testing.T) {
+	cases := []struct {
+		aspectMode AspectMode
+		want       string
+	}{
+		{
+			AspectModeDefault,
+			"default",
+		},
+		{
+			AspectModeScale,
+			"scale",
+		},
+		{
+			AspectModeForceScale,
+			"force-scale",
+		},
+		{
+			AspectModePad,
+			"pad",
+		},
+		{
+			AspectMode(100),
+			"invalid(100)",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.aspectMode.String(); got != c.want {
+			t.Errorf("want %q, got %q", c.want, got)
+		}
+	}
+}
 
 func fixTime(t *testing.T, now time.Time) {
 	t.Helper()
@@ -72,6 +275,19 @@ func BenchmarkConfig(b *testing.B) {
 		Blur: Blur{
 			Radius: 10,
 			Sigma:  1.0,
+		},
+		Texts: []*Text{
+			{
+				Font: &Font{
+					Name: "Ryumin R-KL",
+				},
+				Size:       30,
+				Width:      400,
+				Height:     80,
+				Align:      TextAlignCenter,
+				Foreground: color.White,
+				Text:       "テキストが\n合成できます",
+			},
 		},
 	}
 	for i := 0; i < b.N; i++ {
@@ -1272,6 +1488,10 @@ var parseConfigErrorCases = []string{
 
 	// https://github.com/shogo82148/go-imageflux/pull/48
 	"s=1%2Cf=%2C",
+
+	// text overlays
+	"t=invalid",
+	"t=(invalid)",
 }
 
 func TestParseConfig_error(t *testing.T) {
@@ -1281,4 +1501,71 @@ func TestParseConfig_error(t *testing.T) {
 			t.Errorf("%q: expected error", c)
 		}
 	}
+}
+
+func FuzzParseConfig(f *testing.F) {
+	for _, c := range parseConfigCases {
+		f.Add(c.input)
+	}
+	for _, c := range parseConfigErrorCases {
+		f.Add(c)
+	}
+
+	f.Fuzz(func(t *testing.T, s string) {
+		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
+		c0, rest, err := ParseConfig(s)
+		if err != nil {
+			return
+		}
+		_ = rest
+		s1 := c0.String()
+		c1, _, err := ParseConfig(s1)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		// The zero value of Format has same meaning as FormatAuto.
+		if c0.Format == "" {
+			c0.Format = FormatAuto
+		}
+		if c1.Format == "" {
+			c1.Format = FormatAuto
+		}
+
+		if diff := cmp.Diff(c0, c1); diff != "" {
+			t.Errorf("%q: (-c0 +c1) %v", s, diff)
+		}
+	})
+}
+
+func FuzzProxy_Parse(f *testing.F) {
+	f.Add("/c!/w=100/images/1.jpg", "", "")
+	f.Add("/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200,sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200%2csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200%2Csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/c/w=200/images/1.jpg", "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=", "testsigningsecret")
+	f.Add("/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg", "", "testsigningsecret")
+	f.Add("/images/1.jpg", "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=", "testsigningsecret")
+
+	f.Fuzz(func(t *testing.T, path, sig, secret string) {
+		fixTime(t, time.Date(2023, 6, 24, 9, 23, 0, 0, time.UTC))
+
+		p := &Proxy{
+			Host:   "example.com",
+			Secret: secret,
+		}
+		img0, err := p.Parse(path, sig)
+		if err != nil {
+			return
+		}
+
+		u := img0.SignedURL()
+		_, err = p.Parse(strings.TrimPrefix(u, "https://example.com"), "")
+		if err != nil {
+			t.Error(err)
+		}
+	})
 }

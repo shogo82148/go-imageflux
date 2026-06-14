@@ -376,7 +376,7 @@ func (o Origin) String() string {
 	case OriginBottomRight:
 		return "bottom-right"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(o))
 }
 
 // Format is the format of the output image.
@@ -518,7 +518,7 @@ func (r Rotate) String() string {
 	case RotateAuto:
 		return "auto"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(r))
 }
 
 // Through is an image format list for skipping converting.
@@ -549,8 +549,7 @@ const (
 )
 
 func (t Through) String() string {
-	var buf [32]byte
-	return string(t.append(buf[:]))
+	return string(t.append(nil))
 }
 
 func (t Through) append(buf []byte) []byte {
@@ -943,7 +942,7 @@ func (a AspectMode) String() string {
 	case AspectModePad:
 		return "pad"
 	}
-	return ""
+	return fmt.Sprintf("invalid(%d)", int(a))
 }
 
 func ParseConfig(s string) (config *Config, rest string, err error) {
@@ -1364,25 +1363,19 @@ func (s *parseState) setValue(key, value string) error {
 
 	// DisableOptimization
 	case "o":
-		switch value {
-		case "0":
-			s.config.DisableOptimization = true
-		case "1":
-			s.config.DisableOptimization = false
-		default:
-			return fmt.Errorf("imageflux: invalid optimization %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid optimization %q: %w", value, err)
 		}
+		s.config.DisableOptimization = !v
 
 	// Lossless
 	case "lossless":
-		switch value {
-		case "0":
-			s.config.Lossless = false
-		case "1":
-			s.config.Lossless = true
-		default:
-			return fmt.Errorf("imageflux: invalid lossless %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid lossless %q: %w", value, err)
 		}
+		s.config.Lossless = v
 
 	// ExifOption
 	case "s":
@@ -1442,14 +1435,11 @@ func (s *parseState) setValue(key, value string) error {
 
 	// Invert
 	case "invert":
-		switch value {
-		case "0":
-			s.config.Invert = false
-		case "1":
-			s.config.Invert = true
-		default:
-			return fmt.Errorf("imageflux: invalid invert %q", value)
+		v, err := parseBoolean(value)
+		if err != nil {
+			return fmt.Errorf("imageflux: invalid invert %q: %w", value, err)
 		}
+		s.config.Invert = v
 
 	// Texts
 	case "t":
@@ -1523,7 +1513,7 @@ LOOP:
 			if nest != 0 {
 				break
 			}
-			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
 				// "%2C" is encoded comma ','.
 				break LOOP
 			}
@@ -1543,7 +1533,7 @@ func (s *parseState) skipComma() (skipped bool) {
 		s.idx++
 		return true
 	}
-	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+	if s.idx+3 <= len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
 		// "%2C" is encoded comma ','.
 		s.idx += 3
 		return true
@@ -1580,4 +1570,15 @@ func parseColor(s string) (color.NRGBA, error) {
 		}, nil
 	}
 	return color.NRGBA{}, fmt.Errorf("imageflux: invalid color %q", s)
+}
+
+func parseBoolean(s string) (bool, error) {
+	switch s {
+	case "0":
+		return false, nil
+	case "1":
+		return true, nil
+	default:
+		return false, fmt.Errorf("imageflux: invalid boolean %q", s)
+	}
 }
