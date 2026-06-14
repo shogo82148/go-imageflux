@@ -3,7 +3,6 @@ package imageflux
 import (
 	"image"
 	"image/color"
-	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -222,6 +221,12 @@ func TestOverlay(t *testing.T) {
 			},
 			output: "lg=8%2Fimages%2F1.png",
 		},
+		{
+			overlay: &Overlay{
+				Path: "//",
+			},
+			output: "%2F%2F",
+		},
 	}
 	for _, c := range cases {
 		if got := c.overlay.String(); got != c.output {
@@ -238,6 +243,24 @@ var parseOverlayCases = []struct {
 		input: "",
 		want: &Overlay{
 			Path: "/",
+		},
+	},
+	{
+		input: "%2F",
+		want: &Overlay{
+			Path: "/",
+		},
+	},
+	{
+		input: "//",
+		want: &Overlay{
+			Path: "//",
+		},
+	},
+	{
+		input: "%2F%2F",
+		want: &Overlay{
+			Path: "//",
 		},
 	},
 	{
@@ -445,15 +468,18 @@ func TestParseOverlay(t *testing.T) {
 	for _, c := range parseOverlayCases {
 		got, err := ParseOverlay(c.input)
 		if err != nil {
-			t.Errorf("%q: unexpected %v", c.input, err)
+			t.Errorf("%q: unexpected error: %v", c.input, err)
 		}
-		if !reflect.DeepEqual(got, c.want) {
-			t.Errorf("%q: want %#v, got %#v", c.input, c.want, got)
+		if diff := cmp.Diff(c.want, got); diff != "" {
+			t.Errorf("%q: mismatch (-want +got):\n%s", c.input, diff)
 		}
 	}
 }
 
 var parseOverlayErrorCases = []string{
+	// invalid percent encoding
+	"%2F%XX",
+
 	// common errors
 	"w=1,invalid",
 

@@ -524,7 +524,7 @@ LOOP:
 		case ',':
 			break LOOP
 		case '%':
-			if i+3 < len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
+			if i+3 <= len(s.s) && (s.s[i:i+3] == "%2c" || s.s[i:i+3] == "%2C") {
 				break LOOP
 			}
 		}
@@ -539,7 +539,7 @@ func (s *textParseState) skipComma() (skipped bool) {
 		s.idx++
 		return true
 	}
-	if s.idx+3 < len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
+	if s.idx+3 <= len(s.s) && (s.s[s.idx:s.idx+3] == "%2c" || s.s[s.idx:s.idx+3] == "%2C") {
 		// "%2C" is encoded comma ','.
 		s.idx += 3
 		return true
