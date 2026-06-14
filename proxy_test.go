@@ -25,7 +25,7 @@ func TestProxy_Parse(t *testing.T) {
 		{
 			input: "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -35,7 +35,7 @@ func TestProxy_Parse(t *testing.T) {
 		{
 			input: "/c/w=200,sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -45,7 +45,7 @@ func TestProxy_Parse(t *testing.T) {
 		{
 			input: "/c/w=200%2csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -55,7 +55,7 @@ func TestProxy_Parse(t *testing.T) {
 		{
 			input: "/c/w=200%2Csig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -66,7 +66,7 @@ func TestProxy_Parse(t *testing.T) {
 			input:     "/c/w=200/images/1.jpg",
 			signature: "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -77,7 +77,7 @@ func TestProxy_Parse(t *testing.T) {
 			input:     "/c/sig=1.invalid,w=200/images/1.jpg",
 			signature: "1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{
 				Width: 200,
@@ -87,7 +87,7 @@ func TestProxy_Parse(t *testing.T) {
 		{
 			input: "/c/sig=1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{},
 			path: "/images/1.jpg",
@@ -96,9 +96,32 @@ func TestProxy_Parse(t *testing.T) {
 			input:     "/images/1.jpg",
 			signature: "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 			want: &Config{},
+			path: "/images/1.jpg",
+		},
+
+		// backward compatibility with Secret field
+		{
+			input: "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
+			proxy: &Proxy{
+				Secret: "testsigningsecret",
+			},
+			want: &Config{
+				Width: 200,
+			},
+			path: "/images/1.jpg",
+		},
+		{
+			input: "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
+			proxy: &Proxy{
+				SecretBytes: []byte("testsigningsecret"),
+				Secret:      "invalidsigningsecret",
+			},
+			want: &Config{
+				Width: 200,
+			},
 			path: "/images/1.jpg",
 		},
 	}
@@ -131,28 +154,28 @@ func TestProxy_Parse_sig_error(t *testing.T) {
 			// signature mismatch
 			input: "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 		},
 		{
 			// invalid signature version
 			input: "/c/sig=Z.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 		},
 		{
 			// base64 decode error
 			input: "/c/sig=1.A/images/1.jpg",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 		},
 		{
 			input:     "/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg",
 			signature: "1.-Yd8m-5pXPihiZdlDATcwkkgjzPIC9gFHmmZ3JMxwS0=",
 			proxy: &Proxy{
-				Secret: "testsigningsecret",
+				SecretBytes: []byte("testsigningsecret"),
 			},
 		},
 	}
@@ -161,6 +184,18 @@ func TestProxy_Parse_sig_error(t *testing.T) {
 		_, err := c.proxy.Parse(c.input, c.signature)
 		if err != ErrInvalidSignature {
 			t.Errorf("%q: want ErrInvalidSignature, got %v", c.input, err)
+		}
+	}
+}
+
+func BenchmarkProxy_Parse(b *testing.B) {
+	proxy := &Proxy{
+		SecretBytes: []byte("testsigningsecret"),
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := proxy.Parse("/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=,w=200/images/1.jpg", "")
+		if err != nil {
+			b.Fatalf("unexpected error: %v", err)
 		}
 	}
 }

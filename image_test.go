@@ -162,6 +162,21 @@ func TestImage_SignedURL(t *testing.T) {
 			},
 			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg",
 		},
+		{
+			&Image{
+				Proxy: &Proxy{
+					Host:        "demo.imageflux.jp",
+					SecretBytes: []byte("testsigningsecret"),
+					Secret:      "invalid", // Secret field is ignored when SecretBytes is set.
+				},
+				Path: "/images/1.jpg",
+				Config: &Config{
+					Width: 200,
+				},
+			},
+			// Should match SecretBytes signature, not Secret signature
+			"https://demo.imageflux.jp/c/sig=1.tiKX5u2kw6wp9zDgl1tLiOIi8IsoRIBw8fVgVc0yrNg=%2Cw=200/images/1.jpg",
+		},
 	}
 
 	for _, c := range cases {
