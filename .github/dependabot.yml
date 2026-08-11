@@ -15,3 +15,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      fuzz-actions:
+        patterns:
+          - "shogo82148/actions-go-fuzz/*"
